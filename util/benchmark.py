@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from __future__ import print_function
 
@@ -40,7 +40,7 @@ from os.path import relpath
 # To generate a baseline file, run this script with "--generate-baseline".
 
 WREN_DIR = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-WREN_BIN = os.path.join(WREN_DIR, 'bin')
+WREN_BIN = os.path.join(WREN_DIR, 'build')
 BENCHMARK_DIR = os.path.join('test', 'benchmark')
 BENCHMARK_DIR = relpath(BENCHMARK_DIR).replace("\\", "/")
 
@@ -99,7 +99,7 @@ LANGUAGES = [
   ("dart",           ["fletch", "run"],                ".dart"),
   ("lua",            ["lua"],                          ".lua"),
   ("luajit (-joff)", ["luajit", "-joff"],              ".lua"),
-  ("python",         ["python"],                       ".py"),
+  ("python",         ["python3"],                      ".py"),
   ("ruby",           ["ruby"],                         ".rb")
 ]
 

@@ -1,0 +1,10 @@
+              files      ';'    todos     code  comment    empty    total
+vm               18     3718       21     5737     2565     3826    12149
+optional          4       87        1      148       20      109      278
+cli               0        0        0        0        0        0        0
+
+              files    todos     code  expects    empty    total
+core              1        0      391        0       93      484
+optional          2        2      104        0       23      129
+cli               0        0        0        0        0        0
+test            898       38   271845     3862     2287   278032

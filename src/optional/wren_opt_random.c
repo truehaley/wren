@@ -8,7 +8,7 @@
 #include "wren.h"
 #include "wren_vm.h"
 
-#include "wren_opt_random.wren.inc"
+#include "generated/wren_opt_random.wren.inc"
 
 // Implements the well equidistributed long-period linear PRNG (WELL512a).
 //
@@ -124,19 +124,19 @@ WrenForeignMethodFn wrenRandomBindForeignMethod(WrenVM* vm,
                                                 const char* signature)
 {
   ASSERT(strcmp(className, "Random") == 0, "Should be in Random class.");
-  
+
   if (strcmp(signature, "<allocate>") == 0) return randomAllocate;
   if (strcmp(signature, "seed_()") == 0) return randomSeed0;
   if (strcmp(signature, "seed_(_)") == 0) return randomSeed1;
-  
+
   if (strcmp(signature, "seed_(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)") == 0)
   {
     return randomSeed16;
   }
-  
+
   if (strcmp(signature, "float()") == 0) return randomFloat;
   if (strcmp(signature, "int()") == 0) return randomInt0;
-  
+
   ASSERT(false, "Unknown method.");
   return NULL;
 }

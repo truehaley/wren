@@ -16,6 +16,10 @@ Release/
 # The baseline file is machine-specific
 /test/benchmark/baseline.txt
 
+# generated include sources
+src/vm/generated
+src/optional/generated
+
 # VSCode project files.
 .vscode
 
@@ -39,3 +43,6 @@ ipch/
 
 # macOS
 .DS_Store
+
+#clangd cache
+.cache

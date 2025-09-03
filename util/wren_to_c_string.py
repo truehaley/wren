@@ -1,9 +1,10 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # coding: utf-8
 
 import argparse
 import glob
 import os.path
+from pathlib import Path
 import re
 
 # The source for the Wren modules that are built into the VM or CLI are turned
@@ -48,6 +49,8 @@ def main():
 
   c_source = wren_to_c_string(args.input, wren_source_lines, module)
 
+  directory = Path(args.output).parent
+  directory.mkdir(parents=True, exist_ok=True)
   with open(args.output, "w") as f:
     f.write(c_source)
 
