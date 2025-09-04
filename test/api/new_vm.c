@@ -36,12 +36,12 @@ static void multipleInterpretCalls(WrenVM* vm)
     correct = correct && (result == WREN_RESULT_SUCCESS);
 
     wrenEnsureSlots(otherVM, 2);
-    wrenSetSlotDouble(otherVM, 0, -i);
+    wrenSetSlotNumber(otherVM, 0, -i);
     result = wrenCall(otherVM, absMethod);
     correct = correct && (result == WREN_RESULT_SUCCESS);
 
-    double absValue = wrenGetSlotDouble(otherVM, 0);
-    correct = correct && (absValue == (double)i);
+    WrenNum absValue = wrenGetSlotNumber(otherVM, 0);
+    correct = correct && (absValue == (WrenNum)i);
   }
 
   wrenSetSlotBool(vm, 0, correct);

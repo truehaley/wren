@@ -80,7 +80,7 @@ struct WrenLoadModuleResult;
 // is handed back to you in this callback, so that you can free memory if appropriate.
 typedef void (*WrenLoadModuleCompleteFn)(WrenVM* vm, const char* name, struct WrenLoadModuleResult result);
 
-// The result of a loadModuleFn call. 
+// The result of a loadModuleFn call.
 // [source] is the source code for the module, or NULL if the module is not found.
 // [onComplete] an optional callback that will be called once Wren is done with the result.
 typedef struct WrenLoadModuleResult
@@ -189,7 +189,7 @@ typedef struct
   // embedder to physically locate and read the source code for a module. The
   // first time an import appears, Wren will call this and pass in the name of
   // the module being imported. The method will return a result, which contains
-  // the source code for that module. Memory for the source is owned by the 
+  // the source code for that module. Memory for the source is owned by the
   // host application, and can be freed using the onComplete callback.
   //
   // This will only be called once for any given module name. Wren caches the
@@ -296,6 +296,13 @@ typedef enum
   WREN_TYPE_UNKNOWN
 } WrenType;
 
+// Wren may be configured to use 32 bit floats instead of doubles
+#ifdef WREN_FLOAT32
+    typedef float WrenNum;
+#else
+    typedef double WrenNum;
+#endif
+
 // Get the current wren version number.
 //
 // Can be used to range checks over versions.
@@ -370,9 +377,9 @@ WREN_API void wrenReleaseHandle(WrenVM* vm, WrenHandle* handle);
 //
 // While Wren is dynamically typed, C is not. This means the C interface has to
 // support the various types of primitive values a Wren variable can hold: bool,
-// double, string, etc. If we supported this for every operation in the C API,
+// float, string, etc. If we supported this for every operation in the C API,
 // there would be a combinatorial explosion of functions, like "get a
-// double-valued element from a list", "insert a string key and double value
+// float-valued element from a list", "insert a string key and float value
 // into a map", etc.
 //
 // To avoid that, the only way to convert to and from a raw C value is by going
@@ -421,7 +428,7 @@ WREN_API const char* wrenGetSlotBytes(WrenVM* vm, int slot, int* length);
 // Reads a number from [slot].
 //
 // It is an error to call this if the slot does not contain a number.
-WREN_API double wrenGetSlotDouble(WrenVM* vm, int slot);
+WREN_API WrenNum wrenGetSlotNumber(WrenVM* vm, int slot);
 
 // Reads a foreign object from [slot] and returns a pointer to the foreign data
 // stored with it.
@@ -455,7 +462,7 @@ WREN_API void wrenSetSlotBool(WrenVM* vm, int slot, bool value);
 WREN_API void wrenSetSlotBytes(WrenVM* vm, int slot, const char* bytes, size_t length);
 
 // Stores the numeric [value] in [slot].
-WREN_API void wrenSetSlotDouble(WrenVM* vm, int slot, double value);
+WREN_API void wrenSetSlotNumber(WrenVM* vm, int slot, WrenNum value);
 
 // Creates a new instance of the foreign class stored in [classSlot] with [size]
 // bytes of raw storage and places the resulting object in [slot].
@@ -497,8 +504,8 @@ WREN_API int wrenGetListCount(WrenVM* vm, int slot);
 // [elementSlot].
 WREN_API void wrenGetListElement(WrenVM* vm, int listSlot, int index, int elementSlot);
 
-// Sets the value stored at [index] in the list at [listSlot], 
-// to the value from [elementSlot]. 
+// Sets the value stored at [index] in the list at [listSlot],
+// to the value from [elementSlot].
 WREN_API void wrenSetListElement(WrenVM* vm, int listSlot, int index, int elementSlot);
 
 // Takes the value stored at [elementSlot] and inserts it into the list stored
@@ -533,8 +540,8 @@ WREN_API void wrenRemoveMapValue(WrenVM* vm, int mapSlot, int keySlot,
 WREN_API void wrenGetVariable(WrenVM* vm, const char* module, const char* name,
                      int slot);
 
-// Looks up the top level variable with [name] in resolved [module], 
-// returns false if not found. The module must be imported at the time, 
+// Looks up the top level variable with [name] in resolved [module],
+// returns false if not found. The module must be imported at the time,
 // use wrenHasModule to ensure that before calling.
 WREN_API bool wrenHasVariable(WrenVM* vm, const char* module, const char* name);
 

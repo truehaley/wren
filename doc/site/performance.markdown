@@ -129,8 +129,9 @@ tagging][]* for this.
 
 [nan tagging]: http://wingolog.org/archives/2011/05/18/value-representation-in-javascript-implementations
 
-All values are stored internally in Wren as small, eight-byte double-precision
-floats. Since that is also Wren's number type, in order to do arithmetic, no
+All values are typcially stored internally in Wren as small, eight-byte
+double-precision floats. (Though Wren may also be built to use 32-bit floats.)
+Since that is also Wren's number type, in order to do arithmetic, no
 conversion is needed before the "raw" number can be accessed: a value holding a
 number *is* a valid double. This keeps arithmetic fast.
 

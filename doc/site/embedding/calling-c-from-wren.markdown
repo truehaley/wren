@@ -124,9 +124,9 @@ zero. Like so:
 <pre class="snippet" data-lang="c">
 void mathAdd(WrenVM* vm)
 {
-  double a = wrenGetSlotDouble(vm, 1);
-  double b = wrenGetSlotDouble(vm, 2);
-  wrenSetSlotDouble(vm, 0, a + b);
+  WrenNum a = wrenGetSlotNumber(vm, 1);
+  WrenNum b = wrenGetSlotNumber(vm, 2);
+  wrenSetSlotNumber(vm, 0, a + b);
 }
 </pre>
 

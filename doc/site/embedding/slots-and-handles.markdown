@@ -66,12 +66,12 @@ the simple ones:
 
 <pre class="snippet" data-lang="c">
 void wrenSetSlotBool(WrenVM* vm, int slot, bool value);
-void wrenSetSlotDouble(WrenVM* vm, int slot, double value);
+void wrenSetSlotNumber(WrenVM* vm, int slot, WrenNum value);
 void wrenSetSlotNull(WrenVM* vm, int slot);
 </pre>
 
 Each of these takes a primitive C value and converts it to the corresponding
-[Wren value][]. (Since Wren's [native number type][] *is* a double, there's not
+[Wren value][]. (Since Wren's [native number type][] is usuall a double, there's not
 really much *conversion* going on, but you get the idea.)
 
 [wren value]: ../values.html
@@ -103,7 +103,7 @@ You can, of course, also pull data out of slots. Here are the simple ones:
 
 <pre class="snippet" data-lang="c">
 bool wrenGetSlotBool(WrenVM* vm, int slot);
-double wrenGetSlotDouble(WrenVM* vm, int slot);
+WrenNum wrenGetSlotNumber(WrenVM* vm, int slot);
 </pre>
 
 These take a Wren value of the corresponding type and convert it to its raw C
@@ -203,7 +203,7 @@ This API means getting a value from C into a list is a two step operation. First
 you move the value into a slot, then you take it from the slot and insert it in
 the list. This is kind of tedious, but it lets us use the same set of functions
 for moving values into slots of each primitive type. Otherwise, we'd need
-`wrenInsertInListDouble()`, `wrenInsertInListBool()`, etc.
+`wrenInsertInListWrenNum()`, `wrenInsertInListBool()`, etc.
 
 ## Handles
 

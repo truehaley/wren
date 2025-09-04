@@ -73,7 +73,7 @@ bool validateNum(WrenVM* vm, Value arg, const char* argName);
 
 // Validates that [value] is an integer. Returns true if it is. If not, reports
 // an error and returns false.
-bool validateIntValue(WrenVM* vm, double value, const char* argName);
+bool validateIntValue(WrenVM* vm, WrenNum value, const char* argName);
 
 // Validates that the given [arg] is an integer. Returns true if it is. If not,
 // reports an error and returns false.

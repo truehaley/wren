@@ -355,8 +355,12 @@ def main():
   parser.add_argument("--output-html",
       action="store_true",
       help="Output the results chart as HTML")
+  parser.add_argument('--executable', default=None)
 
   args = parser.parse_args()
+  # override the default executable
+  if(args.executable):
+      LANGUAGES[0] = ("wren", [args.executable], ".wren")
 
   if args.generate_baseline:
     generate_baseline()

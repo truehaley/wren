@@ -5,14 +5,14 @@
 
 static void arguments(WrenVM* vm)
 {
-  double result = 0;
+  WrenNum result = 0;
 
-  result += wrenGetSlotDouble(vm, 1);
-  result += wrenGetSlotDouble(vm, 2);
-  result += wrenGetSlotDouble(vm, 3);
-  result += wrenGetSlotDouble(vm, 4);
+  result += wrenGetSlotNumber(vm, 1);
+  result += wrenGetSlotNumber(vm, 2);
+  result += wrenGetSlotNumber(vm, 3);
+  result += wrenGetSlotNumber(vm, 4);
 
-  wrenSetSlotDouble(vm, 0, result);
+  wrenSetSlotNumber(vm, 0, result);
 }
 
 const char* testScript =
@@ -22,7 +22,7 @@ const char* testScript =
 
 static void call(WrenVM* vm)
 {
-  int iterations = (int)wrenGetSlotDouble(vm, 1);
+  int iterations = (int)wrenGetSlotNumber(vm, 1);
 
   // Since the VM is not re-entrant, we can't call from within this foreign
   // method. Instead, make a new VM to run the call test in.
@@ -40,19 +40,19 @@ static void call(WrenVM* vm)
 
   double startTime = (double)clock() / CLOCKS_PER_SEC;
 
-  double result = 0;
+  WrenNum result = 0;
   for (int i = 0; i < iterations; i++)
   {
     wrenEnsureSlots(otherVM, 5);
     wrenSetSlotHandle(otherVM, 0, testClass);
-    wrenSetSlotDouble(otherVM, 1, 1.0);
-    wrenSetSlotDouble(otherVM, 2, 2.0);
-    wrenSetSlotDouble(otherVM, 3, 3.0);
-    wrenSetSlotDouble(otherVM, 4, 4.0);
+    wrenSetSlotNumber(otherVM, 1, 1.0);
+    wrenSetSlotNumber(otherVM, 2, 2.0);
+    wrenSetSlotNumber(otherVM, 3, 3.0);
+    wrenSetSlotNumber(otherVM, 4, 4.0);
 
     wrenCall(otherVM, method);
 
-    result += wrenGetSlotDouble(otherVM, 0);
+    result += wrenGetSlotNumber(otherVM, 0);
   }
 
   double elapsed = (double)clock() / CLOCKS_PER_SEC - startTime;
@@ -63,7 +63,7 @@ static void call(WrenVM* vm)
 
   if (result == (1.0 + 2.0 + 3.0 + 4.0) * iterations)
   {
-    wrenSetSlotDouble(vm, 0, elapsed);
+    wrenSetSlotNumber(vm, 0, elapsed);
   }
   else
   {

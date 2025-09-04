@@ -10,7 +10,7 @@ static void newMap(WrenVM* vm)
 static void invalidInsert(WrenVM* vm)
 {
   wrenSetSlotNewMap(vm, 0);
-  
+
   wrenEnsureSlots(vm, 3);
   // Foreign Class is in slot 1
   wrenSetSlotString(vm, 2, "England");
@@ -20,7 +20,7 @@ static void invalidInsert(WrenVM* vm)
 static void insert(WrenVM* vm)
 {
   wrenSetSlotNewMap(vm, 0);
-  
+
   wrenEnsureSlots(vm, 3);
 
   // Insert String
@@ -28,9 +28,9 @@ static void insert(WrenVM* vm)
   wrenSetSlotString(vm, 2, "London");
   wrenSetMapValue(vm, 0, 1, 2);
 
-  // Insert Double
-  wrenSetSlotDouble(vm, 1, 1.0);
-  wrenSetSlotDouble(vm, 2, 42.0);
+  // Insert WrenNum
+  wrenSetSlotNumber(vm, 1, 1.0);
+  wrenSetSlotNumber(vm, 2, 42.0);
   wrenSetMapValue(vm, 0, 1, 2);
 
   // Insert Boolean
@@ -60,14 +60,14 @@ static void removeKey(WrenVM* vm)
 static void countWren(WrenVM* vm)
 {
   int count = wrenGetMapCount(vm, 1);
-  wrenSetSlotDouble(vm, 0, count);
+  wrenSetSlotNumber(vm, 0, count);
 }
 
 static void countAPI(WrenVM* vm)
 {
   insert(vm);
   int count = wrenGetMapCount(vm, 0);
-  wrenSetSlotDouble(vm, 0, count);
+  wrenSetSlotNumber(vm, 0, count);
 }
 
 static void containsWren(WrenVM* vm)
@@ -80,7 +80,7 @@ static void containsWren(WrenVM* vm)
 static void containsAPI(WrenVM* vm)
 {
   insert(vm);
-  
+
   wrenEnsureSlots(vm, 1);
   wrenSetSlotString(vm, 1, "England");
 

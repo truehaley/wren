@@ -374,7 +374,7 @@ DEF_PRIMITIVE(list_iterate)
   if (!validateInt(vm, args[1], "Iterator")) return false;
 
   // Stop if we're out of bounds.
-  double index = AS_NUM(args[1]);
+  WrenNum index = AS_NUM(args[1]);
   if (index < 0 || index >= list->elements.count - 1) RETURN_FALSE;
 
   // Otherwise, move to the next index.
@@ -616,7 +616,11 @@ DEF_PRIMITIVE(num_fromString)
 
   errno = 0;
   char* end;
-  double number = strtod(string->value, &end);
+  #ifdef WREN_FLOAT32
+    WrenNum number = strtof(string->value, &end);
+  #else
+    WrenNum number = strtod(string->value, &end);
+  #endif
 
   // Skip past any trailing whitespace.
   while (*end != '\0' && isspace((unsigned char)*end)) end++;
@@ -638,15 +642,22 @@ DEF_PRIMITIVE(num_fromString)
     }
 
 DEF_NUM_CONSTANT(infinity, INFINITY)
-DEF_NUM_CONSTANT(nan,      WREN_DOUBLE_NAN)
+DEF_NUM_CONSTANT(nan,      WREN_NUMBER_NAN)
 DEF_NUM_CONSTANT(pi,       3.14159265358979323846264338327950288)
 DEF_NUM_CONSTANT(tau,      6.28318530717958647692528676655900577)
 
-DEF_NUM_CONSTANT(largest,  DBL_MAX)
-DEF_NUM_CONSTANT(smallest, DBL_MIN)
+#ifdef WREN_FLOAT32
+    DEF_NUM_CONSTANT(largest,  FLT_MAX)
+    DEF_NUM_CONSTANT(smallest, FLT_MIN)
+    DEF_NUM_CONSTANT(maxSafeInteger, 16777216.0)
+    DEF_NUM_CONSTANT(minSafeInteger, -16777216.0)
+#else
+    DEF_NUM_CONSTANT(largest,  DBL_MAX)
+    DEF_NUM_CONSTANT(smallest, DBL_MIN)
+    DEF_NUM_CONSTANT(maxSafeInteger, 9007199254740991.0)
+    DEF_NUM_CONSTANT(minSafeInteger, -9007199254740991.0)
+#endif
 
-DEF_NUM_CONSTANT(maxSafeInteger, 9007199254740991.0)
-DEF_NUM_CONSTANT(minSafeInteger, -9007199254740991.0)
 
 // Defines a primitive on Num that calls infix [op] and returns [type].
 #define DEF_NUM_INFIX(name, op, type)                                          \
@@ -682,34 +693,69 @@ DEF_NUM_BITWISE(LeftShift,  <<)
 DEF_NUM_BITWISE(RightShift, >>)
 
 // Defines a primitive method on Num that returns the result of [fn].
-#define DEF_NUM_FN(name, fn)                                                   \
-    DEF_PRIMITIVE(num_##name)                                                  \
-    {                                                                          \
-      RETURN_NUM(fn(AS_NUM(args[0])));                                         \
+#ifdef WREN_FLOAT32
+    #define DEF_NUM_FN1(name, fn)                                                   \
+        DEF_PRIMITIVE(num_##name)                                                   \
+        {                                                                           \
+            RETURN_NUM(fn##f(AS_NUM(args[0])));                                     \
+        }
+    #define DEF_NUM_FN2(name, fn, errMsg)                                           \
+        DEF_PRIMITIVE(num_##name)                                                   \
+        {                                                                           \
+            if (!validateNum(vm, args[1], errMsg)) return false;                    \
+            RETURN_NUM(fn##f(AS_NUM(args[0]), AS_NUM(args[1])));                    \
+        }
+#else
+    #define DEF_NUM_FN1(name, fn)                                                   \
+        DEF_PRIMITIVE(num_##name)                                                   \
+        {                                                                           \
+            RETURN_NUM(fn(AS_NUM(args[0])));                                        \
+        }
+    #define DEF_NUM_FN2(name, fn, errMsg)                                           \
+        DEF_PRIMITIVE(num_##name)                                                   \
+        {                                                                           \
+            if (!validateNum(vm, args[1], errMsg)) return false;                    \
+            RETURN_NUM(fn(AS_NUM(args[0]), AS_NUM(args[1])));                       \
+        }
+#endif
+
+#define DEF_NUM_OP1(name, op)                                                       \
+    DEF_PRIMITIVE(num_##name)                                                       \
+    {                                                                               \
+        RETURN_NUM(op(AS_NUM(args[0])));                                            \
     }
 
-DEF_NUM_FN(abs,     fabs)
-DEF_NUM_FN(acos,    acos)
-DEF_NUM_FN(asin,    asin)
-DEF_NUM_FN(atan,    atan)
-DEF_NUM_FN(cbrt,    cbrt)
-DEF_NUM_FN(ceil,    ceil)
-DEF_NUM_FN(cos,     cos)
-DEF_NUM_FN(floor,   floor)
-DEF_NUM_FN(negate,  -)
-DEF_NUM_FN(round,   round)
-DEF_NUM_FN(sin,     sin)
-DEF_NUM_FN(sqrt,    sqrt)
-DEF_NUM_FN(tan,     tan)
-DEF_NUM_FN(log,     log)
-DEF_NUM_FN(log2,    log2)
-DEF_NUM_FN(exp,     exp)
+#define DEF_NUM_OPBOOL(name, op)                                                    \
+    DEF_PRIMITIVE(num_##name)                                                       \
+    {                                                                               \
+        RETURN_BOOL(op(AS_NUM(args[0])));                                           \
+    }
 
-DEF_PRIMITIVE(num_mod)
-{
-  if (!validateNum(vm, args[1], "Right operand")) return false;
-  RETURN_NUM(fmod(AS_NUM(args[0]), AS_NUM(args[1])));
-}
+
+DEF_NUM_FN1(abs,    fabs)
+DEF_NUM_FN1(acos,   acos)
+DEF_NUM_FN1(asin,   asin)
+DEF_NUM_FN1(atan,   atan)
+DEF_NUM_FN1(cbrt,   cbrt)
+DEF_NUM_FN1(ceil,   ceil)
+DEF_NUM_FN1(cos,    cos)
+DEF_NUM_FN1(floor,  floor)
+DEF_NUM_FN1(round,  round)
+DEF_NUM_FN1(sin,    sin)
+DEF_NUM_FN1(sqrt,   sqrt)
+DEF_NUM_FN1(tan,    tan)
+DEF_NUM_FN1(log,    log)
+DEF_NUM_FN1(log2,   log2)
+DEF_NUM_FN1(exp,    exp)
+
+DEF_NUM_FN2(mod,    fmod, "Right operand")
+DEF_NUM_FN2(atan2,  atan2, "x value")
+DEF_NUM_FN2(pow,    pow, "Power value")
+
+DEF_NUM_OP1(negate, -)
+DEF_NUM_OP1(bitwiseNot, ~(uint32_t))    // Bitwise operators always work on 32-bit unsigned ints.
+DEF_NUM_OPBOOL(isInfinity, isinf)
+DEF_NUM_OPBOOL(isNan, isnan)
 
 DEF_PRIMITIVE(num_eqeq)
 {
@@ -723,18 +769,12 @@ DEF_PRIMITIVE(num_bangeq)
   RETURN_BOOL(AS_NUM(args[0]) != AS_NUM(args[1]));
 }
 
-DEF_PRIMITIVE(num_bitwiseNot)
-{
-  // Bitwise operators always work on 32-bit unsigned ints.
-  RETURN_NUM(~(uint32_t)AS_NUM(args[0]));
-}
-
 DEF_PRIMITIVE(num_dotDot)
 {
   if (!validateNum(vm, args[1], "Right hand side of range")) return false;
 
-  double from = AS_NUM(args[0]);
-  double to = AS_NUM(args[1]);
+  WrenNum from = AS_NUM(args[0]);
+  WrenNum to = AS_NUM(args[1]);
   RETURN_VAL(wrenNewRange(vm, from, to, true));
 }
 
@@ -742,24 +782,17 @@ DEF_PRIMITIVE(num_dotDotDot)
 {
   if (!validateNum(vm, args[1], "Right hand side of range")) return false;
 
-  double from = AS_NUM(args[0]);
-  double to = AS_NUM(args[1]);
+  WrenNum from = AS_NUM(args[0]);
+  WrenNum to = AS_NUM(args[1]);
   RETURN_VAL(wrenNewRange(vm, from, to, false));
-}
-
-DEF_PRIMITIVE(num_atan2)
-{
-  if (!validateNum(vm, args[1], "x value")) return false;
-
-  RETURN_NUM(atan2(AS_NUM(args[0]), AS_NUM(args[1])));
 }
 
 DEF_PRIMITIVE(num_min)
 {
   if (!validateNum(vm, args[1], "Other value")) return false;
 
-  double value = AS_NUM(args[0]);
-  double other = AS_NUM(args[1]);
+  WrenNum value = AS_NUM(args[0]);
+  WrenNum other = AS_NUM(args[1]);
   RETURN_NUM(value <= other ? value : other);
 }
 
@@ -767,8 +800,8 @@ DEF_PRIMITIVE(num_max)
 {
   if (!validateNum(vm, args[1], "Other value")) return false;
 
-  double value = AS_NUM(args[0]);
-  double other = AS_NUM(args[1]);
+  WrenNum value = AS_NUM(args[0]);
+  WrenNum other = AS_NUM(args[1]);
   RETURN_NUM(value > other ? value : other);
 }
 
@@ -777,46 +810,51 @@ DEF_PRIMITIVE(num_clamp)
   if (!validateNum(vm, args[1], "Min value")) return false;
   if (!validateNum(vm, args[2], "Max value")) return false;
 
-  double value = AS_NUM(args[0]);
-  double min = AS_NUM(args[1]);
-  double max = AS_NUM(args[2]);
-  double result = (value < min) ? min : ((value > max) ? max : value);
+  WrenNum value = AS_NUM(args[0]);
+  WrenNum min = AS_NUM(args[1]);
+  WrenNum max = AS_NUM(args[2]);
+  WrenNum result = (value < min) ? min : ((value > max) ? max : value);
   RETURN_NUM(result);
 }
 
-DEF_PRIMITIVE(num_pow)
-{
-  if (!validateNum(vm, args[1], "Power value")) return false;
+#ifdef WREN_FLOAT32
+    DEF_PRIMITIVE(num_truncate)
+    {
+        WrenNum integer;
+        modff(AS_NUM(args[0]) , &integer);
+        RETURN_NUM(integer);
+    }
 
-  RETURN_NUM(pow(AS_NUM(args[0]), AS_NUM(args[1])));
-}
+    DEF_PRIMITIVE(num_fraction)
+    {
+        WrenNum unused;
+        RETURN_NUM(modff(AS_NUM(args[0]) , &unused));
+    }
+#else
+    DEF_PRIMITIVE(num_truncate)
+    {
+        WrenNum integer;
+        modf(AS_NUM(args[0]) , &integer);
+        RETURN_NUM(integer);
+    }
 
-DEF_PRIMITIVE(num_fraction)
-{
-  double unused;
-  RETURN_NUM(modf(AS_NUM(args[0]) , &unused));
-}
-
-DEF_PRIMITIVE(num_isInfinity)
-{
-  RETURN_BOOL(isinf(AS_NUM(args[0])));
-}
+    DEF_PRIMITIVE(num_fraction)
+    {
+        WrenNum unused;
+        RETURN_NUM(modf(AS_NUM(args[0]) , &unused));
+    }
+#endif
 
 DEF_PRIMITIVE(num_isInteger)
 {
-  double value = AS_NUM(args[0]);
+  WrenNum value = AS_NUM(args[0]);
   if (isnan(value) || isinf(value)) RETURN_FALSE;
   RETURN_BOOL(trunc(value) == value);
 }
 
-DEF_PRIMITIVE(num_isNan)
-{
-  RETURN_BOOL(isnan(AS_NUM(args[0])));
-}
-
 DEF_PRIMITIVE(num_sign)
 {
-  double value = AS_NUM(args[0]);
+  WrenNum value = AS_NUM(args[0]);
   if (value > 0)
   {
     RETURN_NUM(1);
@@ -834,13 +872,6 @@ DEF_PRIMITIVE(num_sign)
 DEF_PRIMITIVE(num_toString)
 {
   RETURN_VAL(wrenNumToString(vm, AS_NUM(args[0])));
-}
-
-DEF_PRIMITIVE(num_truncate)
-{
-  double integer;
-  modf(AS_NUM(args[0]) , &integer);
-  RETURN_NUM(integer);
 }
 
 DEF_PRIMITIVE(object_same)
@@ -936,7 +967,7 @@ DEF_PRIMITIVE(range_iterate)
 
   if (!validateNum(vm, args[1], "Iterator")) return false;
 
-  double iterator = AS_NUM(args[1]);
+  WrenNum iterator = AS_NUM(args[1]);
 
   // Iterate towards [to] from [from].
   if (range->from < range->to)
@@ -1199,7 +1230,7 @@ DEF_PRIMITIVE(string_toString)
 
 DEF_PRIMITIVE(system_clock)
 {
-  RETURN_NUM((double)clock() / CLOCKS_PER_SEC);
+  RETURN_NUM((WrenNum)clock() / CLOCKS_PER_SEC);
 }
 
 DEF_PRIMITIVE(system_gc)
@@ -1296,7 +1327,8 @@ void wrenInitializeCore(WrenVM* vm)
   //   '---------'   '-------------------'            -'
 
   // The rest of the classes can now be defined normally.
-  wrenInterpret(vm, NULL, coreModuleSource);
+  WrenInterpretResult result = wrenInterpret(vm, NULL, coreModuleSource);
+  ASSERT(WREN_RESULT_SUCCESS == result, "Interpreting core module");
 
   vm->boolClass = AS_CLASS(wrenFindVariable(vm, coreModule, "Bool"));
   PRIMITIVE(vm->boolClass, "toString", bool_toString);

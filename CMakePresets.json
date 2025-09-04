@@ -1,0 +1,46 @@
+{
+  "version": 10,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 24,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+        "name": "default",
+        "description": "Default Wren Release configuration",
+        "binaryDir": "${sourceDir}/build/rel",
+        "cacheVariables": {
+            "WREN_NUMBER": "",
+            "CMAKE_BUILD_TYPE": "Release"
+        }
+    },
+    {
+        "name": "dbg",
+        "description": "Wren Debug configuration",
+        "binaryDir": "${sourceDir}/build/dbg",
+        "cacheVariables": {
+            "WREN_NUMBER": "",
+            "CMAKE_BUILD_TYPE": "Debug"
+        }
+    },
+    {
+        "name": "f32",
+        "description": "Wren Float32 Release configuration",
+        "binaryDir": "${sourceDir}/build/f32rel",
+        "cacheVariables": {
+            "WREN_NUMBER": "WREN_FLOAT32",
+            "CMAKE_BUILD_TYPE": "Release"
+        }
+    },
+    {
+        "name": "f32dbg",
+        "description": "Wren Float32 Debug configuration",
+        "binaryDir": "${sourceDir}/build/f32dbg",
+        "cacheVariables": {
+            "WREN_NUMBER": "WREN_FLOAT32",
+            "CMAKE_BUILD_TYPE": "Debug"
+        }
+    }
+  ]
+}

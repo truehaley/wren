@@ -150,14 +150,14 @@ ObjFiber* wrenNewFiber(WrenVM* vm, ObjClosure* closure)
 {
   // Allocate the arrays before the fiber in case it triggers a GC.
   CallFrame* frames = ALLOCATE_ARRAY(vm, CallFrame, INITIAL_CALL_FRAMES);
-  
+
   // Add one slot for the unused implicit receiver slot that the compiler
   // assumes all functions have.
   int stackCapacity = closure == NULL
       ? 1
       : wrenPowerOf2Ceil(closure->fn->maxSlots + 1);
   Value* stack = ALLOCATE_ARRAY(vm, Value, stackCapacity);
-  
+
   ObjFiber* fiber = ALLOCATE(vm, ObjFiber);
   initObj(vm, &fiber->obj, OBJ_FIBER, vm->fiberClass);
 
@@ -173,7 +173,7 @@ ObjFiber* wrenNewFiber(WrenVM* vm, ObjClosure* closure)
   fiber->caller = NULL;
   fiber->error = NULL_VAL;
   fiber->state = FIBER_OTHER;
-  
+
   if (closure != NULL)
   {
     // Initialize the first call frame.
@@ -183,22 +183,22 @@ ObjFiber* wrenNewFiber(WrenVM* vm, ObjClosure* closure)
     fiber->stackTop[0] = OBJ_VAL(closure);
     fiber->stackTop++;
   }
-  
+
   return fiber;
 }
 
 void wrenEnsureStack(WrenVM* vm, ObjFiber* fiber, int needed)
 {
   if (fiber->stackCapacity >= needed) return;
-  
+
   int capacity = wrenPowerOf2Ceil(needed);
-  
+
   Value* oldStack = fiber->stack;
   fiber->stack = (Value*)wrenReallocate(vm, fiber->stack,
                                         sizeof(Value) * fiber->stackCapacity,
                                         sizeof(Value) * capacity);
   fiber->stackCapacity = capacity;
-  
+
   // If the reallocation moves the stack, then we need to recalculate every
   // pointer that points into the old stack to into the same relative distance
   // in the new stack. We have to be a little careful about how these are
@@ -211,14 +211,14 @@ void wrenEnsureStack(WrenVM* vm, ObjFiber* fiber, int needed)
     {
       vm->apiStack = fiber->stack + (vm->apiStack - oldStack);
     }
-    
+
     // Stack pointer for each call frame.
     for (int i = 0; i < fiber->numFrames; i++)
     {
       CallFrame* frame = &fiber->frames[i];
       frame->stackStart = fiber->stack + (frame->stackStart - oldStack);
     }
-    
+
     // Open upvalues.
     for (ObjUpvalue* upvalue = fiber->openUpvalues;
          upvalue != NULL;
@@ -226,7 +226,7 @@ void wrenEnsureStack(WrenVM* vm, ObjFiber* fiber, int needed)
     {
       upvalue->value = fiber->stack + (upvalue->value - oldStack);
     }
-    
+
     fiber->stackTop = fiber->stack + (fiber->stackTop - oldStack);
   }
 }
@@ -249,7 +249,7 @@ ObjFn* wrenNewFunction(WrenVM* vm, ObjModule* module, int maxSlots)
 
   ObjFn* fn = ALLOCATE(vm, ObjFn);
   initObj(vm, &fn->obj, OBJ_FN, vm->fnClass);
-  
+
   wrenValueBufferInit(&fn->constants);
   wrenByteBufferInit(&fn->code);
   fn->module = module;
@@ -257,7 +257,7 @@ ObjFn* wrenNewFunction(WrenVM* vm, ObjModule* module, int maxSlots)
   fn->numUpvalues = 0;
   fn->arity = 0;
   fn->debug = debug;
-  
+
   return fn;
 }
 
@@ -370,7 +370,7 @@ ObjMap* wrenNewMap(WrenVM* vm)
   return map;
 }
 
-static inline uint32_t hashBits(uint64_t hash)
+static inline uint32_t hash64Bits(uint64_t hash)
 {
   // From v8's ComputeLongHash() which in turn cites:
   // Thomas Wang, Integer Hash Functions.
@@ -384,11 +384,30 @@ static inline uint32_t hashBits(uint64_t hash)
   return (uint32_t)(hash & 0x3fffffff);
 }
 
+static inline uint32_t hash32Bits(uint32_t hash)
+{
+  // Another version from
+  // Thomas Wang, Integer Hash Functions.
+  // http://www.concentric.net/~Ttwang/tech/inthash.htm
+  hash = ~hash + (hash << 15);  // hash = (hash << 15) - hash - 1;
+  hash = hash ^ (hash >> 12);
+  hash = hash + (hash << 2);
+  hash = hash ^ (hash >> 4);
+  hash = hash * 2057;  // hash = (hash + (hash << 3)) + (hash << 11);
+  hash = hash ^ (hash >> 16);
+  return hash & 0x3fffffff;
+}
+
+
 // Generates a hash code for [num].
-static inline uint32_t hashNumber(double num)
+static inline uint32_t hashNumber(WrenNum num)
 {
   // Hash the raw bits of the value.
-  return hashBits(wrenDoubleToBits(num));
+  #ifdef WREN_FLOAT32
+    return hash32Bits(wrenNumberToBits(num));
+  #else
+    return hash64Bits(wrenNumberToBits(num));
+  #endif
 }
 
 // Generates a hash code for [object].
@@ -399,7 +418,7 @@ static uint32_t hashObject(Obj* object)
     case OBJ_CLASS:
       // Classes just use their name.
       return hashObject((Obj*)((ObjClass*)object)->name);
-      
+
       // Allow bare (non-closure) functions so that we can use a map to find
       // existing constants in a function's constant table. This is only used
       // internally. Since user code never sees a non-closure function, they
@@ -435,7 +454,7 @@ static uint32_t hashValue(Value value)
   if (IS_OBJ(value)) return hashObject(AS_OBJ(value));
 
   // Hash the raw bits of the unboxed value.
-  return hashBits(value);
+  return hash64Bits(value);
 #else
   switch (value.type)
   {
@@ -446,7 +465,7 @@ static uint32_t hashValue(Value value)
     case VAL_OBJ:   return hashObject(AS_OBJ(value));
     default:        UNREACHABLE();
   }
-  
+
   return 0;
 #endif
 }
@@ -461,21 +480,21 @@ static bool findEntry(MapEntry* entries, uint32_t capacity, Value key,
 {
   // If there is no entry array (an empty map), we definitely won't find it.
   if (capacity == 0) return false;
-  
+
   // Figure out where to insert it in the table. Use open addressing and
   // basic linear probing.
   uint32_t startIndex = hashValue(key) % capacity;
   uint32_t index = startIndex;
-  
+
   // If we pass a tombstone and don't end up finding the key, its entry will
   // be re-used for the insert.
   MapEntry* tombstone = NULL;
-  
+
   // Walk the probe sequence until we've tried every slot.
   do
   {
     MapEntry* entry = &entries[index];
-    
+
     if (IS_UNDEFINED(entry->key))
     {
       // If we found an empty slot, the key is not in the table. If we found a
@@ -503,12 +522,12 @@ static bool findEntry(MapEntry* entries, uint32_t capacity, Value key,
       *result = entry;
       return true;
     }
-    
+
     // Try the next slot.
     index = (index + 1) % capacity;
   }
   while (index != startIndex);
-  
+
   // If we get here, the table is full of tombstones. Return the first one we
   // found.
   ASSERT(tombstone != NULL, "Map should have tombstones or empty entries.");
@@ -524,7 +543,7 @@ static bool insertEntry(MapEntry* entries, uint32_t capacity,
                         Value key, Value value)
 {
   ASSERT(entries != NULL, "Should ensure capacity before inserting.");
-  
+
   MapEntry* entry;
   if (findEntry(entries, capacity, key, &entry))
   {
@@ -557,7 +576,7 @@ static void resizeMap(WrenVM* vm, ObjMap* map, uint32_t capacity)
     for (uint32_t i = 0; i < map->capacity; i++)
     {
       MapEntry* entry = &map->entries[i];
-      
+
       // Don't copy empty entries or tombstones.
       if (IS_UNDEFINED(entry->key)) continue;
 
@@ -660,7 +679,7 @@ ObjModule* wrenNewModule(WrenVM* vm, ObjString* name)
   return module;
 }
 
-Value wrenNewRange(WrenVM* vm, double from, double to, bool isInclusive)
+Value wrenNewRange(WrenVM* vm, WrenNum from, WrenNum to, bool isInclusive)
 {
   ObjRange* range = ALLOCATE(vm, ObjRange);
   initObj(vm, &range->obj, OBJ_RANGE, vm->rangeClass);
@@ -714,12 +733,12 @@ Value wrenNewStringLength(WrenVM* vm, const char* text, size_t length)
   // Allow NULL if the string is empty since byte buffers don't allocate any
   // characters for a zero-length string.
   ASSERT(length == 0 || text != NULL, "Unexpected NULL string.");
-  
+
   ObjString* string = allocateString(vm, length);
-  
+
   // Copy the string (if given one).
   if (length > 0 && text != NULL) memcpy(string->value, text, length);
-  
+
   hashString(string);
   return OBJ_VAL(string);
 }
@@ -754,7 +773,7 @@ Value wrenNewStringFromRange(WrenVM* vm, ObjString* source, int start,
   return OBJ_VAL(result);
 }
 
-Value wrenNumToString(WrenVM* vm, double value)
+Value wrenNumToString(WrenVM* vm, WrenNum value)
 {
   // Edge case: If the value is NaN or infinity, different versions of libc
   // produce different outputs (some will format it signed and some won't). To
@@ -789,7 +808,11 @@ Value wrenNumToString(WrenVM* vm, double value)
   // + 1 char for "\0"
   // = 24
   char buffer[24];
-  int length = sprintf(buffer, "%.14g", value);
+  #ifdef WREN_FLOAT32
+    int length = sprintf(buffer, "%.8g", value);
+  #else
+    int length = sprintf(buffer, "%.14g", value);
+  #endif
   return wrenNewStringLength(vm, buffer, length);
 }
 
@@ -1096,7 +1119,7 @@ static void blackenFn(WrenVM* vm, ObjFn* fn)
   vm->bytesAllocated += sizeof(ObjFn);
   vm->bytesAllocated += sizeof(uint8_t) * fn->code.capacity;
   vm->bytesAllocated += sizeof(Value) * fn->constants.capacity;
-  
+
   // The debug line number buffer.
   vm->bytesAllocated += sizeof(int) * fn->code.capacity;
   // TODO: What about the function name?
@@ -1247,7 +1270,7 @@ void wrenFreeObj(WrenVM* vm, Obj* obj)
       DEALLOCATE(vm, fiber->stack);
       break;
     }
-      
+
     case OBJ_FN:
     {
       ObjFn* fn = (ObjFn*)obj;

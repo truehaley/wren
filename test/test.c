@@ -187,7 +187,7 @@
     char* end = path->chars;
 
     // Split into parts and handle "." and "..".
-    int leadingDoubles = 0;
+    int leadingNumbers = 0;
     for (;;)
     {
       if (*end == '\0' || isSeparator(*end))
@@ -211,7 +211,7 @@
             else
             {
               // Can't back out any further, so preserve the "..".
-              leadingDoubles++;
+              leadingNumbers++;
             }
           }
           else
@@ -254,10 +254,10 @@
       slice.end = path->chars + prefixLength;
       appendSlice(result, slice);
     }
-    else if (leadingDoubles > 0)
+    else if (leadingNumbers > 0)
     {
       // Add any leading "..".
-      for (int i = 0; i < leadingDoubles; i++)
+      for (int i = 0; i < leadingNumbers; i++)
       {
         if (needsSeparator) pathAppendChar(result, '/');
         pathAppendString(result, "..");
@@ -345,7 +345,7 @@
     printf("%s", text);
   }
 
-  void reportError(WrenVM* vm, WrenErrorType type, 
+  void reportError(WrenVM* vm, WrenErrorType type,
     const char* module, int line, const char* message)
   {
     switch (type)
@@ -372,7 +372,7 @@
     }
   }
 
-  WrenLoadModuleResult readModule(WrenVM* vm, const char* module) 
+  WrenLoadModuleResult readModule(WrenVM* vm, const char* module)
   {
     //source may or may not be null
     WrenLoadModuleResult result = {0};
@@ -461,7 +461,7 @@
     return result;
   }
 
-  int handle_args(int argc, const char* argv[]) 
+  int handle_args(int argc, const char* argv[])
   {
 
     if (argc < 2)

@@ -5,8 +5,8 @@
 
 static void counterAllocate(WrenVM* vm)
 {
-  double* counter = (double*)wrenSetSlotNewForeign(vm, 0, 0, sizeof(double));
-  *counter = wrenGetSlotDouble(vm, 1);
+  WrenNum* counter = (WrenNum*)wrenSetSlotNewForeign(vm, 0, 0, sizeof(WrenNum));
+  *counter = wrenGetSlotNumber(vm, 1);
 }
 
 void resetStackAfterForeignConstructBindClass(
@@ -35,8 +35,8 @@ int resetStackAfterForeignConstructRunTests(WrenVM* vm)
 
   wrenEnsureSlots(vm, 3);
   wrenSetSlotHandle(vm, 0, testClass);
-  wrenSetSlotDouble(vm, 1, 1.0);
-  wrenSetSlotDouble(vm, 2, 2.0);
+  wrenSetSlotNumber(vm, 1, 1.0);
+  wrenSetSlotNumber(vm, 2, 2.0);
   wrenCall(vm, afterConstruct);
 
   wrenReleaseHandle(vm, testClass);

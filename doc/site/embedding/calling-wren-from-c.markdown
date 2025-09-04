@@ -155,7 +155,7 @@ into slot one. You can use any of the slot functions to set this up. For the
 example, it's just:
 
 <pre class="snippet" data-lang="c">
-wrenSetSlotDouble(vm, 1, elapsedTime);
+wrenSetSlotNumber(vm, 1, elapsedTime);
 </pre>
 
 ## Calling the Method

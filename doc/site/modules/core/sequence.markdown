@@ -91,8 +91,8 @@ Creates a new sequence that applies the `transformation` to each element in the
 original sequence while it is iterated.
 
 <pre class="snippet">
-var doubles = [1, 2, 3].map {|n| n * 2 }
-for (n in doubles) {
+var numbers = [1, 2, 3].map {|n| n * 2 }
+for (n in numbers) {
   System.print(n) //> 2
                   //> 4
                   //> 6
@@ -111,9 +111,9 @@ To force eager evaluation, just call `.toList` on the result.
 
 <pre class="snippet">
 var numbers = [1, 2, 3]
-var doubles = numbers.map {|n| n * 2 }.toList
+var numbers = numbers.map {|n| n * 2 }.toList
 numbers.add(4)
-System.print(doubles) //> [2, 4, 6]
+System.print(numbers) //> [2, 4, 6]
 </pre>
 
 ### **reduce**(function)

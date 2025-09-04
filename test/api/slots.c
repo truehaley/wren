@@ -18,7 +18,7 @@ static void getSlots(WrenVM* vm)
   if (length != 5) result = false;
   if (memcmp(bytes, "by\0te", length) != 0) result = false;
 
-  if (wrenGetSlotDouble(vm, 3) != 1.5) result = false;
+  if (wrenGetSlotNumber(vm, 3) != 1.5) result = false;
   if (strcmp(wrenGetSlotString(vm, 4), "str") != 0) result = false;
 
   WrenHandle* handle = wrenGetSlotHandle(vm, 5);
@@ -43,7 +43,7 @@ static void setSlots(WrenVM* vm)
 
   wrenSetSlotBool(vm, 1, true);
   wrenSetSlotBytes(vm, 2, "by\0te", 5);
-  wrenSetSlotDouble(vm, 3, 1.5);
+  wrenSetSlotNumber(vm, 3, 1.5);
   wrenSetSlotString(vm, 4, "str");
   wrenSetSlotNull(vm, 5);
 
@@ -57,7 +57,7 @@ static void setSlots(WrenVM* vm)
   if (length != 5) result = false;
   if (memcmp(bytes, "by\0te", length) != 0) result = false;
 
-  if (wrenGetSlotDouble(vm, 3) != 1.5) result = false;
+  if (wrenGetSlotNumber(vm, 3) != 1.5) result = false;
   if (strcmp(wrenGetSlotString(vm, 4), "str") != 0) result = false;
 
   if (wrenGetSlotType(vm, 5) != WREN_TYPE_NULL) result = false;
@@ -102,14 +102,14 @@ static void ensure(WrenVM* vm)
   // Use the slots to make sure they're available.
   for (int i = 0; i < 20; i++)
   {
-    wrenSetSlotDouble(vm, i, i);
+    wrenSetSlotNumber(vm, i, i);
   }
 
   int sum = 0;
 
   for (int i = 0; i < 20; i++)
   {
-    sum += (int)wrenGetSlotDouble(vm, i);
+    sum += (int)wrenGetSlotNumber(vm, i);
   }
 
   char result[100];
@@ -134,14 +134,14 @@ static void ensureOutsideForeign(WrenVM* vm)
   // Use the slots to make sure they're available.
   for (int i = 0; i < 20; i++)
   {
-    wrenSetSlotDouble(otherVM, i, i);
+    wrenSetSlotNumber(otherVM, i, i);
   }
 
   int sum = 0;
 
   for (int i = 0; i < 20; i++)
   {
-    sum += (int)wrenGetSlotDouble(otherVM, i);
+    sum += (int)wrenGetSlotNumber(otherVM, i);
   }
 
   wrenFreeVM(otherVM);
@@ -158,12 +158,12 @@ static void foreignClassAllocate(WrenVM* vm)
 
 static void getListCount(WrenVM* vm)
 {
-  wrenSetSlotDouble(vm, 0, wrenGetListCount(vm, 1));
+  wrenSetSlotNumber(vm, 0, wrenGetListCount(vm, 1));
 }
 
 static void getListElement(WrenVM* vm)
 {
-  int index = (int)wrenGetSlotDouble(vm, 2);
+  int index = (int)wrenGetSlotNumber(vm, 2);
   wrenGetListElement(vm, 1, index, 0);
 }
 

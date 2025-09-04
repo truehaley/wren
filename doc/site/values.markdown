@@ -16,7 +16,8 @@ A boolean value represents truth or falsehood. There are two boolean literals,
 ## Numbers
 
 Like other scripting languages, Wren has a single numeric type:
-double-precision floating point. Number literals look like you expect coming
+double-precision floating point. (Or 32-bit single precision floating point
+as an alternative build option) Number literals look like you expect coming
 from other languages:
 
 
@@ -51,7 +52,7 @@ String literals are surrounded in double quotes:
 </pre>
 
 They can also span multiple lines. When they do, the newline character within
-the string will always be `\n` (`\r\n` is normalized to `\n`). 
+the string will always be `\n` (`\r\n` is normalized to `\n`).
 
 <pre class="snippet">
 "hi
@@ -149,15 +150,15 @@ as long as they only contain whitespace (spaces + tabs).
   """
 </pre>
 
-The resulting value in the string above has no newlines or trailing whitespace. 
-Note the spaces in front of the Hello are preserved. 
+The resulting value in the string above has no newlines or trailing whitespace.
+Note the spaces in front of the Hello are preserved.
 
 <pre class="snippet">
     Hello world
 </pre>
 
 A raw string will be parsed exactly as is in the file, unmodified.
-This means it can contain quotes, invalid syntax, other data formats 
+This means it can contain quotes, invalid syntax, other data formats
 and so on without being modified by Wren.
 
 <pre class="snippet">

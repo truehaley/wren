@@ -22,7 +22,7 @@ target_compile_definitions(wrenlib PRIVATE
 )
 
 target_compile_definitions(wrenlib PUBLIC
-    ${WREN_CONFIG}
+    ${WREN_NUMBER}
 )
 
 target_include_directories(wrenlib PUBLIC
@@ -67,14 +67,6 @@ generate_wren_include(wren_opt_meta
 
 
 ###################
-# Wren cli
-###################
-#add_executable(wren)
-
-
-
-
-###################
 # Wren test app
 ###################
 add_executable(wren_test)
@@ -111,10 +103,17 @@ include(CTest)
 add_custom_target(tests)
 add_dependencies(tests wren_test)
 function(test_suite suite)
-    add_test(NAME test-${suite}
-            COMMAND ${CMAKE_SOURCE_DIR}/util/test.py ${suite}
+    if(WREN_NUMBER STREQUAL WREN_FLOAT32)
+        add_test(NAME test-${suite}
+            COMMAND ${CMAKE_SOURCE_DIR}/util/test.py --float32 --executable ${CMAKE_BINARY_DIR}/wren_test ${suite}
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    )
+        )
+    else()
+        add_test(NAME test-${suite}
+            COMMAND ${CMAKE_SOURCE_DIR}/util/test.py --executable ${CMAKE_BINARY_DIR}/wren_test ${suite}
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        )
+    endif()
 endfunction(test_suite)
 
 test_suite(api)
@@ -137,52 +136,40 @@ test_suite(core/string_code_point_sequence)
 test_suite(core/system)
 
 test_suite(language/assignment)
-test_suite(language/bitwise_precedence.wren)
-test_suite(language/bom.wren)
 test_suite(language/break)
-test_suite(language/chained_newline.wren)
 test_suite(language/class)
 test_suite(language/closure)
 test_suite(language/comments)
 test_suite(language/conditional)
 test_suite(language/constructor)
 test_suite(language/continue)
-test_suite(language/deeply_nested_gc.wren)
-test_suite(language/empty_block.wren)
-test_suite(language/empty_file.wren)
 test_suite(language/fiber)
 test_suite(language/field)
 test_suite(language/for)
 test_suite(language/foreign)
 test_suite(language/function)
 test_suite(language/if)
-test_suite(language/ignore_carriage_returns.wren)
 test_suite(language/implicit_receiver)
 test_suite(language/inheritance)
 test_suite(language/interpolation)
 test_suite(language/list)
 test_suite(language/logical_operator)
-test_suite(language/many_reallocations.wren)
 test_suite(language/map)
 test_suite(language/method)
+test_suite(language/misc)
 test_suite(language/module)
-test_suite(language/no_trailing_newline.wren)
 test_suite(language/nonlocal)
 test_suite(language/null)
 test_suite(language/number)
-test_suite(language/precedence.wren)
 test_suite(language/return)
-test_suite(language/semicolon.wren)
 test_suite(language/setter)
 test_suite(language/shebang)
 test_suite(language/static_field)
 test_suite(language/string)
 test_suite(language/super)
 test_suite(language/this)
-test_suite(language/unexpected_character.wren)
 test_suite(language/variable)
 test_suite(language/while)
-test_suite(language/whitespace.wren)
 
 test_suite(limit)
 test_suite(meta)

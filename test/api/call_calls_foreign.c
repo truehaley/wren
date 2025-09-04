@@ -10,7 +10,7 @@ static void api(WrenVM *vm) {
 
   for (int i = 1; i < 10; i++)
   {
-    wrenSetSlotDouble(vm, i, i);
+    wrenSetSlotNumber(vm, i, i);
     wrenInsertInList(vm, 0, -1, i);
   }
 }

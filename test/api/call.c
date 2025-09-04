@@ -6,7 +6,11 @@
 int callRunTests(WrenVM* vm)
 {
   wrenEnsureSlots(vm, 1);
-  wrenGetVariable(vm, "./test/api/call", "Call", 0);
+  #ifdef WREN_FLOAT32
+    wrenGetVariable(vm, "./test/api/num_float32/call", "Call", 0);
+  #else
+    wrenGetVariable(vm, "./test/api/num_double/call", "Call", 0);
+  #endif
   WrenHandle* callClass = wrenGetSlotHandle(vm, 0);
 
   WrenHandle* noParams = wrenMakeCallHandle(vm, "noParams");
@@ -29,13 +33,13 @@ int callRunTests(WrenVM* vm)
 
   wrenEnsureSlots(vm, 2);
   wrenSetSlotHandle(vm, 0, callClass);
-  wrenSetSlotDouble(vm, 1, 1.0);
+  wrenSetSlotNumber(vm, 1, 1.0);
   wrenCall(vm, one);
 
   wrenEnsureSlots(vm, 3);
   wrenSetSlotHandle(vm, 0, callClass);
-  wrenSetSlotDouble(vm, 1, 1.0);
-  wrenSetSlotDouble(vm, 2, 2.0);
+  wrenSetSlotNumber(vm, 1, 1.0);
+  wrenSetSlotNumber(vm, 2, 2.0);
   wrenCall(vm, two);
 
   // Operators.
@@ -45,20 +49,20 @@ int callRunTests(WrenVM* vm)
 
   wrenEnsureSlots(vm, 2);
   wrenSetSlotHandle(vm, 0, callClass);
-  wrenSetSlotDouble(vm, 1, 1.0);
+  wrenSetSlotNumber(vm, 1, 1.0);
   wrenCall(vm, binary);
 
   wrenEnsureSlots(vm, 3);
   wrenSetSlotHandle(vm, 0, callClass);
-  wrenSetSlotDouble(vm, 1, 1.0);
-  wrenSetSlotDouble(vm, 2, 2.0);
+  wrenSetSlotNumber(vm, 1, 1.0);
+  wrenSetSlotNumber(vm, 2, 2.0);
   wrenCall(vm, subscript);
 
   wrenEnsureSlots(vm, 4);
   wrenSetSlotHandle(vm, 0, callClass);
-  wrenSetSlotDouble(vm, 1, 1.0);
-  wrenSetSlotDouble(vm, 2, 2.0);
-  wrenSetSlotDouble(vm, 3, 3.0);
+  wrenSetSlotNumber(vm, 1, 1.0);
+  wrenSetSlotNumber(vm, 2, 2.0);
+  wrenSetSlotNumber(vm, 3, 3.0);
   wrenCall(vm, subscriptSet);
 
   // Returning a value.
@@ -78,8 +82,8 @@ int callRunTests(WrenVM* vm)
 
   wrenEnsureSlots(vm, 3);
   wrenSetSlotHandle(vm, 0, callClass);
-  wrenSetSlotDouble(vm, 1, 1.2);
-  wrenSetSlotDouble(vm, 2, 3.4);
+  wrenSetSlotNumber(vm, 1, 1.2);
+  wrenSetSlotNumber(vm, 2, 3.4);
   wrenCall(vm, two);
 
   wrenEnsureSlots(vm, 3);
@@ -106,7 +110,7 @@ int callRunTests(WrenVM* vm)
   wrenSetSlotHandle(vm, 0, callClass);
   for (int i = 1; i < 10; i++)
   {
-    wrenSetSlotDouble(vm, i, i * 0.1);
+    wrenSetSlotNumber(vm, i, i * 0.1);
   }
   wrenCall(vm, one);
 

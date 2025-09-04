@@ -7,19 +7,19 @@ static void newList(WrenVM* vm)
   wrenSetSlotNewList(vm, 0);
 }
 
-// Helper function to store a double in a slot then insert it into the list at
+// Helper function to store a WrenNum in a slot then insert it into the list at
 // slot zero.
-static void insertNumber(WrenVM* vm, int index, double value)
+static void insertNumber(WrenVM* vm, int index, WrenNum value)
 {
-  wrenSetSlotDouble(vm, 1, value);
+  wrenSetSlotNumber(vm, 1, value);
   wrenInsertInList(vm, 0, index, 1);
 }
 
-// Helper function to append a double in a slot then insert it into the list at
+// Helper function to append a WrenNum in a slot then insert it into the list at
 // slot zero.
-static void appendNumber(WrenVM* vm, double value)
+static void appendNumber(WrenVM* vm, WrenNum value)
 {
-  wrenSetSlotDouble(vm, 1, value);
+  wrenSetSlotNumber(vm, 1, value);
   wrenInsertInList(vm, 0, -1, 1);
 }
 
@@ -48,7 +48,7 @@ static void insert(WrenVM* vm)
 static void get(WrenVM* vm)
 {
   int listSlot = 1;
-  int index = (int)wrenGetSlotDouble(vm, 2);
+  int index = (int)wrenGetSlotNumber(vm, 2);
 
   wrenGetListElement(vm, listSlot, index, 0);
 }
@@ -63,13 +63,13 @@ static void set(WrenVM* vm)
   appendNumber(vm, 2.0);
   appendNumber(vm, 3.0);
   appendNumber(vm, 4.0);
-  
+
   //list[2] = 33
-  wrenSetSlotDouble(vm, 1, 33);
+  wrenSetSlotNumber(vm, 1, 33);
   wrenSetListElement(vm, 0, 2, 1);
 
   //list[-1] = 44
-  wrenSetSlotDouble(vm, 1, 44);
+  wrenSetSlotNumber(vm, 1, 44);
   wrenSetListElement(vm, 0, -1, 1);
 }
 

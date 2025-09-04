@@ -24,9 +24,13 @@
 // former is significantly faster and more compact. The latter is useful for
 // debugging and may be more portable.
 //
-// Defaults to on.
-#ifndef WREN_NAN_TAGGING
-  #define WREN_NAN_TAGGING 1
+// Defaults to on when using 64 bit doubles, off with 32 bit floats
+#ifdef WREN_FLOAT32
+  #define WREN_NAN_TAGGING 0
+#else
+  #ifndef WREN_NAN_TAGGING
+    #define WREN_NAN_TAGGING 1
+  #endif
 #endif
 
 // If true, the VM's interpreter loop uses computed gotos. See this for more:

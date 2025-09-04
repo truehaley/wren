@@ -18,8 +18,8 @@ int resetStackAfterCallAbortRunTests(WrenVM* vm)
 
   wrenEnsureSlots(vm, 3);
   wrenSetSlotHandle(vm, 0, testClass);
-  wrenSetSlotDouble(vm, 1, 1.0);
-  wrenSetSlotDouble(vm, 2, 2.0);
+  wrenSetSlotNumber(vm, 1, 1.0);
+  wrenSetSlotNumber(vm, 2, 2.0);
   wrenCall(vm, afterAbort);
 
   wrenReleaseHandle(vm, testClass);

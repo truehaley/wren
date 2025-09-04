@@ -15,6 +15,8 @@ import platform
 
 parser = ArgumentParser()
 parser.add_argument('--suffix', default='')
+parser.add_argument('--executable', default=None, help='Specify the wren_test executable to use')
+parser.add_argument('--float32', action='store_true', help='Test with WrenNum as 32-bit float')
 parser.add_argument('suite', nargs='?')
 
 args = parser.parse_args(sys.argv[1:])
@@ -24,6 +26,9 @@ is_debug = args.suffix.startswith('_d')
 
 WREN_DIR = dirname(dirname(realpath(__file__)))
 WREN_APP = join(WREN_DIR, 'build', 'wren_test' + args.suffix)
+# override the default executable location
+if(args.executable):
+  WREN_APP = args.executable
 
 WREN_APP_WITH_EXT = WREN_APP
 if platform.system() == "Windows":
@@ -352,6 +357,15 @@ def run_script(app, path, type):
   if args.suite:
     this_test = relpath(path, join(WREN_DIR, 'test'))
     if not this_test.startswith(args.suite):
+      return
+
+  if args.float32:
+    # skip double tests when testing float
+    if 'num_double' in path.split('/'):
+      return
+  else:
+    # skip float tests when testing double
+    if 'num_float32' in path.split('/'):
       return
 
   # Update the status line.

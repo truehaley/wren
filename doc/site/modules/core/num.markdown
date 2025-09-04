@@ -39,12 +39,12 @@ The smallest positive representable numeric value.
 
 The largest integer that Wren can safely represent. It's a constant value of `9007199254740991`.
 
- This is relevant because Wren uses double precision [floating-point format](https://en.wikipedia.org/wiki/IEEE_floating_point)
+ This is relevant because Wren typically uses double precision [floating-point format](https://en.wikipedia.org/wiki/IEEE_floating_point)
  for numbers, which can only safely represent integers between <code>-(2<sup>53</sup> - 1)</code> and <code>2<sup>53</sup> - 1</code>.
 
 ### Num.**minSafeInteger**
 
-The smallest integer Wren can safely represent. It's a constant value of `-9007199254740991`. 
+The smallest integer Wren can safely represent. It's a constant value of `-9007199254740991`.
 
 ## Methods
 
@@ -144,7 +144,7 @@ The binary (base-2) logarithm of the number. Returns `nan` if the base is negati
 
 ### **exp**
 
-The exponential `e` (Euler’s number) raised to the number. This: `eⁿ`. 
+The exponential `e` (Euler’s number) raised to the number. This: `eⁿ`.
 
 ### **min**(other)
 
@@ -156,8 +156,8 @@ Returns the maximum value when comparing this number and `other`.
 
 ### **clamp**(min, max)
 
-Clamps a number into the range of `min` and `max`. If this number is less than min, 
-`min` is returned. If bigger than `max`, `max` is returned. Otherwise, the number 
+Clamps a number into the range of `min` and `max`. If this number is less than min,
+`min` is returned. If bigger than `max`, `max` is returned. Otherwise, the number
 itself is returned.
 
 ### **pow**(power)
@@ -222,8 +222,8 @@ not a number. Wren doesn't roll with implicit conversions.
 
 ### **%**(denominator) operator
 
-Also known as mod or modulus.   
-The floating-point remainder of this number divided by `denominator`. 
+Also known as mod or modulus.
+The floating-point remainder of this number divided by `denominator`.
 
 The returned value has the same sign as `this` (internally calls `fmod` from C).
 

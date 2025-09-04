@@ -64,7 +64,7 @@
 // more defined below that are specific to the Nan tagged or other
 // representation.
 #define BOOL_VAL(boolean) ((boolean) ? TRUE_VAL : FALSE_VAL)    // boolean
-#define NUM_VAL(num) (wrenNumToValue(num))                      // double
+#define NUM_VAL(num) (wrenNumToValue(num))                      // WrenNum
 #define OBJ_VAL(obj) (wrenObjectToValue((Obj*)(obj)))           // Any Obj___*
 
 // These perform type tests on a Value, returning `true` if the Value is of the
@@ -139,7 +139,7 @@ typedef struct
   ValueType type;
   union
   {
-    double num;
+    WrenNum num;
     Obj* obj;
   } as;
 } Value;
@@ -247,19 +247,19 @@ typedef struct
 typedef struct
 {
   Obj obj;
-  
+
   ByteBuffer code;
   ValueBuffer constants;
-  
+
   // The module where this function was defined.
   ObjModule* module;
 
   // The maximum number of stack slots this function may use.
   int maxSlots;
-  
+
   // The number of upvalues this function closes over.
   int numUpvalues;
-  
+
   // The number of parameters this function expects. Used to ensure that .call
   // handles a mismatch between number of parameters and arguments. This will
   // only be set for fns, and not ObjFns that represent methods or scripts.
@@ -285,10 +285,10 @@ typedef struct
   // Pointer to the current (really next-to-be-executed) instruction in the
   // function's bytecode.
   uint8_t* ip;
-  
+
   // The closure being executed.
   ObjClosure* closure;
-  
+
   // Pointer to the first stack slot used by this call frame. This will contain
   // the receiver, followed by the function's parameters, then local variables
   // and temporaries.
@@ -301,11 +301,11 @@ typedef enum
 {
   // The fiber is being run from another fiber using a call to `try()`.
   FIBER_TRY,
-  
+
   // The fiber was directly invoked by `runInterpreter()`. This means it's the
   // initial fiber used by a call to `wrenCall()` or `wrenInterpret()`.
   FIBER_ROOT,
-  
+
   // The fiber is invoked some other way. If [caller] is `NULL` then the fiber
   // was invoked using `call()`. If [numFrames] is zero, then the fiber has
   // finished running and is done. If [numFrames] is one and that frame's `ip`
@@ -316,41 +316,41 @@ typedef enum
 typedef struct sObjFiber
 {
   Obj obj;
-  
+
   // The stack of value slots. This is used for holding local variables and
   // temporaries while the fiber is executing. It is heap-allocated and grown
   // as needed.
   Value* stack;
-  
+
   // A pointer to one past the top-most value on the stack.
   Value* stackTop;
-  
+
   // The number of allocated slots in the stack array.
   int stackCapacity;
-  
+
   // The stack of call frames. This is a dynamic array that grows as needed but
   // never shrinks.
   CallFrame* frames;
-  
+
   // The number of frames currently in use in [frames].
   int numFrames;
-  
+
   // The number of [frames] allocated.
   int frameCapacity;
-  
+
   // Pointer to the first node in the linked list of open upvalues that are
   // pointing to values still on the stack. The head of the list will be the
   // upvalue closest to the top of the stack, and then the list works downwards.
   ObjUpvalue* openUpvalues;
-  
+
   // The fiber that ran this one. If this fiber is yielded, control will resume
   // to this one. May be `NULL`.
   struct sObjFiber* caller;
-  
+
   // If the fiber failed because of a runtime error, this will contain the
   // error object. Otherwise, it will be null.
   Value error;
-  
+
   FiberState state;
 } ObjFiber;
 
@@ -368,7 +368,7 @@ typedef enum
 
   // A normal user-defined method.
   METHOD_BLOCK,
-  
+
   // No method for the given symbol.
   METHOD_NONE
 } MethodType;
@@ -410,7 +410,7 @@ struct sObjClass
 
   // The name of the class.
   ObjString* name;
-  
+
   // The ClassAttribute for the class, if any
   Value attributes;
 };
@@ -482,10 +482,10 @@ typedef struct
   Obj obj;
 
   // The beginning of the range.
-  double from;
+  WrenNum from;
 
   // The end of the range. May be greater or less than [from].
-  double to;
+  WrenNum to;
 
   // True if [to] is included in the range.
   bool isInclusive;
@@ -647,7 +647,7 @@ static inline void wrenAppendCallFrame(WrenVM* vm, ObjFiber* fiber,
 {
   // The caller should have ensured we already have enough capacity.
   ASSERT(fiber->frameCapacity > fiber->numFrames, "No memory for call frame.");
-  
+
   CallFrame* frame = &fiber->frames[fiber->numFrames++];
   frame->stackStart = stackStart;
   frame->closure = closure;
@@ -711,7 +711,7 @@ Value wrenMapRemoveKey(WrenVM* vm, ObjMap* map, Value key);
 ObjModule* wrenNewModule(WrenVM* vm, ObjString* name);
 
 // Creates a new range from [from] to [to].
-Value wrenNewRange(WrenVM* vm, double from, double to, bool isInclusive);
+Value wrenNewRange(WrenVM* vm, WrenNum from, WrenNum to, bool isInclusive);
 
 // Creates a new string object and copies [text] into it.
 //
@@ -730,7 +730,7 @@ Value wrenNewStringFromRange(WrenVM* vm, ObjString* source, int start,
                              uint32_t count, int step);
 
 // Produces a string representation of [value].
-Value wrenNumToString(WrenVM* vm, double value);
+Value wrenNumToString(WrenVM* vm, WrenNum value);
 
 // Creates a new formatted string from [format] and any additional arguments
 // used in the format string.
@@ -809,7 +809,8 @@ static inline bool wrenValuesSame(Value a, Value b)
 #else
   if (a.type != b.type) return false;
   if (a.type == VAL_NUM) return a.as.num == b.as.num;
-  return a.as.obj == b.as.obj;
+  if (a.type == VAL_OBJ) return a.as.obj == b.as.obj;
+  return a.type == b.type;
 #endif
 }
 
@@ -854,21 +855,21 @@ static inline Value wrenObjectToValue(Obj* obj)
 #endif
 }
 
-// Interprets [value] as a [double].
-static inline double wrenValueToNum(Value value)
+// Interprets [value] as a [WrenNum].
+static inline WrenNum wrenValueToNum(Value value)
 {
 #if WREN_NAN_TAGGING
-  return wrenDoubleFromBits(value);
+  return wrenNumberFromBits(value);
 #else
   return value.as.num;
 #endif
 }
 
 // Converts [num] to a [Value].
-static inline Value wrenNumToValue(double num)
+static inline Value wrenNumToValue(WrenNum num)
 {
 #if WREN_NAN_TAGGING
-  return wrenDoubleToBits(num);
+  return wrenNumberToBits(num);
 #else
   Value value;
   value.type = VAL_NUM;
