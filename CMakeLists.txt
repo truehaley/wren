@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
 
-set(CMAKE_BUILD_TYPE Debug) # Default to Debug build
-
 project(wren
         VERSION 0.4
         DESCRIPTION "Wren"
