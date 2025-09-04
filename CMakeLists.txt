@@ -47,12 +47,12 @@ target_sources(wrenlib PRIVATE
 )
 
 function(generate_wren_include name source output)
-    add_custom_target(generate-${name} DEPENDS ${CMAKE_SOURCE_DIR}/${output})
+    add_custom_target(generate-${name} DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${output})
     add_custom_command(
-        OUTPUT ${CMAKE_SOURCE_DIR}/${output}
+        OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/${output}
         COMMENT "Generating ${output}"
-        DEPENDS ${CMAKE_SOURCE_DIR}/${source}
-        COMMAND ${CMAKE_SOURCE_DIR}/util/wren_to_c_string.py ${CMAKE_SOURCE_DIR}/${output} ${CMAKE_SOURCE_DIR}/${source}
+        DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${source}
+        COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/util/wren_to_c_string.py ${CMAKE_CURRENT_SOURCE_DIR}/${output} ${CMAKE_CURRENT_SOURCE_DIR}/${source}
         VERBATIM
     )
     add_dependencies(wrenlib generate-${name})
