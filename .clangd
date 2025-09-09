@@ -1,0 +1,4 @@
+CompileFlags:
+    CompilationDatabase: build/f32dbg
+Diagnostics:
+    UnusedIncludes: None

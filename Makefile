@@ -83,6 +83,9 @@ test-f32dbg: build/f32dbg/wren_test
 
 test-all: test-dbg test-f32dbg test-rel test-f32
 
+# to run an individual test manually, for example:
+#  util/test.py core/number --executable build/f32dbg/wren_test --float32
+
 
 ######
 ## benchmark commands
