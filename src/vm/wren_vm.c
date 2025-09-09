@@ -823,7 +823,7 @@ inline static bool checkArity(WrenVM* vm, Value value, int numArgs)
 
 // The main bytecode interpreter loop. This is where the magic happens. It is
 // also, as you can imagine, highly performance critical.
-static WrenInterpretResult runInterpreter(WrenVM* vm, register ObjFiber* fiber)
+static WrenInterpretResult PERFORMANCE_CRITICAL_FUNC(runInterpreter)(WrenVM* vm, register ObjFiber* fiber)
 {
   // Remember the current fiber so we can find it if a GC happens.
   vm->fiber = fiber;
@@ -889,7 +889,7 @@ static WrenInterpretResult runInterpreter(WrenVM* vm, register ObjFiber* fiber)
 
   #if WREN_COMPUTED_GOTO
 
-  static void* dispatchTable[] = {
+  static void* PERFORMANCE_CRITICAL_VAR(dispatchTable)[] = {
     #define OPCODE(name, _) &&code_##name,
     #include "wren_opcodes.h"
     #undef OPCODE

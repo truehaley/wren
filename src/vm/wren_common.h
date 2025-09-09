@@ -8,6 +8,12 @@
 //
 // This header is *not* intended to be included by code outside of Wren itself.
 
+// An optional platform header may be included which can be used to override
+// many of the of configuration options set within this header
+#ifdef WREN_PLATFORM_HEADER
+  #include WREN_PLATFORM_HEADER
+#endif
+
 // Wren pervasively uses the C99 integer types (uint16_t, etc.) along with some
 // of the associated limit constants (UINT32_MAX, etc.). The constants are not
 // part of standard C++, so aren't included by default by C++ compilers when you
@@ -151,6 +157,19 @@
   // Elsewhere, use a zero-sized array. It's technically undefined behavior,
   // but works reliably in most known compilers.
   #define FLEXIBLE_ARRAY 0
+#endif
+
+// The PERFORMANCE_CRITICAL macro may be used to wrap variables and functions
+//  (such as the main interpreter loop) that should be heavily optimized or located
+//  in special areas of memory to ensure the acheive the best possible performance
+// For example: this may cause a function to be always be cached or located in
+//  memory without any wait states
+#ifndef PERFORMANCE_CRITICAL_FUNC
+  #define PERFORMANCE_CRITICAL_FUNC(function) function
+#endif
+
+#ifndef PERFORMANCE_CRITICAL_VAR
+  #define PERFORMANCE_CRITICAL_VAR(var) var
 #endif
 
 // Assertions are used to validate program invariants. They indicate things the
