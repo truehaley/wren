@@ -1,3 +1,6 @@
+#ifndef OPCODE  // silence warnings while editing
+  #define OPCODE(name, stack)
+#endif
 // This defines the bytecode instructions used by the VM. It does so by invoking
 // an OPCODE() macro which is expected to be defined at the point that this is
 // included. (See: http://en.wikipedia.org/wiki/X_Macro for more.)
@@ -14,6 +17,8 @@
 
 // Load the constant at index [arg].
 OPCODE(CONSTANT, 1)
+// Load an immediate (Integer) constant [arg]
+OPCODE(ICONSTANT, 1)
 
 // Push null onto the stack.
 OPCODE(NULL, 1)
@@ -224,3 +229,5 @@ OPCODE(IMPORT_VARIABLE, 1)
 // This pseudo-instruction indicates the end of the bytecode. It should
 // always be preceded by a `CODE_RETURN`, so is never actually executed.
 OPCODE(END, 0)
+
+#undef OPCODE

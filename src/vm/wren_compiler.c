@@ -414,7 +414,6 @@ static void copyMethodAttributes(Compiler* compiler, bool isForeign,
 static const int stackEffects[] = {
   #define OPCODE(_, effect) effect,
   #include "wren_opcodes.h"
-  #undef OPCODE
 };
 
 static void printError(Parser* parser, int line, const char* label,
@@ -1370,6 +1369,16 @@ static int emitJump(Compiler* compiler, Code instruction)
 // it from the constant table.
 static void emitConstant(Compiler* compiler, Value value)
 {
+  // Is the constant a short integer?
+  if(IS_NUM(value)) {
+    WrenNum num = AS_NUM(value);
+    if( wrenNumIsInteger(num) && 65536>num && 0<=num ) {
+      // If it fits, emit as an immediate instead of creating a constant
+      emitShortArg(compiler, CODE_ICONSTANT, (int)num);
+      return;
+    }
+  }
+
   int constant = addConstant(compiler, value);
 
   // Compile the code to load the constant.
@@ -2914,6 +2923,7 @@ static int getByteCountForArguments(const uint8_t* bytecode,
       return 1;
 
     case CODE_CONSTANT:
+    case CODE_ICONSTANT:
     case CODE_LOAD_MODULE_VAR:
     case CODE_STORE_MODULE_VAR:
     case CODE_CALL_0:

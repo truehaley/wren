@@ -878,6 +878,12 @@ static inline Value wrenNumToValue(WrenNum num)
 #endif
 }
 
+static inline bool wrenNumIsInteger(WrenNum num)
+{
+  if (isnan(num) || isinf(num)) return false;
+  return (trunc(num) == num);
+}
+
 static inline bool wrenMapIsValidKey(Value arg)
 {
   return IS_BOOL(arg)

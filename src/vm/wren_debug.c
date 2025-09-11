@@ -102,7 +102,6 @@ void wrenDumpValue(Value value)
 static const char* const opcodeName[] = {
   #define OPCODE(name, _) #name,
   #include "wren_opcodes.h"
-  #undef OPCODE
 };
 
 static int dumpInstruction(WrenVM* vm, ObjFn* fn, int i, int* lastLine)
@@ -139,6 +138,13 @@ static int dumpInstruction(WrenVM* vm, ObjFn* fn, int i, int* lastLine)
       printf("%-16s %5d '", opcodeName[code], constant);
       wrenDumpValue(fn->constants.data[constant]);
       printf("'\n");
+      break;
+    }
+
+    case CODE_ICONSTANT:
+    {
+      int num = READ_SHORT();
+      printf("%-16s %5d '%u'\n", opcodeName[code], num, num);
       break;
     }
 

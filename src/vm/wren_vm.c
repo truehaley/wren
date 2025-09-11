@@ -911,7 +911,6 @@ static WrenInterpretResult PERFORMANCE_CRITICAL_FUNC(runInterpreter)(WrenVM* vm,
   static void* PERFORMANCE_CRITICAL_VAR(dispatchTable)[] = {
     #define OPCODE(name, _) &&code_##name,
     #include "wren_opcodes.h"
-    #undef OPCODE
   };
 
   #define INTERPRET_LOOP    DISPATCH();
@@ -979,6 +978,10 @@ static WrenInterpretResult PERFORMANCE_CRITICAL_FUNC(runInterpreter)(WrenVM* vm,
 
     CASE_CODE(CONSTANT):
       PUSH(fn->constants.data[READ_SHORT()]);
+      DISPATCH();
+
+    CASE_CODE(ICONSTANT):
+      PUSH(wrenNumToValue((WrenNum)READ_SHORT()));
       DISPATCH();
 
     {

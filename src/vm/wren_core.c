@@ -847,9 +847,7 @@ DEF_PRIMITIVE(num_clamp)
 
 DEF_PRIMITIVE(num_isInteger)
 {
-  WrenNum value = AS_NUM(args[0]);
-  if (isnan(value) || isinf(value)) RETURN_FALSE;
-  RETURN_BOOL(trunc(value) == value);
+  RETURN_BOOL(wrenNumIsInteger(AS_NUM(args[0])));
 }
 
 DEF_PRIMITIVE(num_sign)
