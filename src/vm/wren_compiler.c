@@ -2582,7 +2582,8 @@ static void conditional(Compiler* compiler, bool canAssign)
 
 void infixOp(Compiler* compiler, bool canAssign)
 {
-  GrammarRule* rule = getRule(compiler->parser->previous.type);
+  TokenType type = compiler->parser->previous.type;
+  GrammarRule* rule = getRule(type);
 
   // An infix operator cannot end an expression.
   ignoreNewlines(compiler);
@@ -2590,9 +2591,22 @@ void infixOp(Compiler* compiler, bool canAssign)
   // Compile the right-hand side.
   parsePrecedence(compiler, (Precedence)(rule->precedence + 1));
 
-  // Call the operator method on the left-hand side.
   Signature signature = { rule->name, (int)strlen(rule->name), SIG_METHOD, 1 };
-  callSignature(compiler, CODE_CALL_0, &signature);
+  int symbol = signatureSymbol(compiler, &signature);
+
+  // Call the operator method on the left-hand side.
+  // We special case the common arithmetic operators with their own dedicated instructions,
+  //  however they are still given an argument for the method signature symbol they
+  //  refer to.  If the operation is on a number class, the VM will execute it directly,
+  //  but otherwise the method will be called as in the default case.
+  switch(type) {
+    case TOKEN_PLUS:    emitShortArg(compiler, (Code)(CODE_ADD), symbol); break;
+    case TOKEN_MINUS:   emitShortArg(compiler, (Code)(CODE_SUB), symbol); break;
+    case TOKEN_STAR:    emitShortArg(compiler, (Code)(CODE_MUL), symbol); break;
+    case TOKEN_SLASH:   emitShortArg(compiler, (Code)(CODE_DIV), symbol); break;
+    case TOKEN_PERCENT: emitShortArg(compiler, (Code)(CODE_MOD), symbol); break;
+    default:            emitShortArg(compiler, (Code)(CODE_CALL_1), symbol); break;
+  }
 }
 
 // Compiles a method signature for an infix operator.
@@ -2922,6 +2936,11 @@ static int getByteCountForArguments(const uint8_t* bytecode,
     case CODE_JUMP:
     case CODE_LOOP:
     case CODE_JUMP_IF:
+    case CODE_ADD:
+    case CODE_SUB:
+    case CODE_MUL:
+    case CODE_DIV:
+    case CODE_MOD:
     case CODE_AND:
     case CODE_OR:
     case CODE_METHOD_INSTANCE:

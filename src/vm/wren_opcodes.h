@@ -126,6 +126,15 @@ OPCODE(LOOP, 0)
 // Pop and if not truthy then jump the instruction pointer [arg] forward.
 OPCODE(JUMP_IF, -1)
 
+// Standard arithmetic operations.  If called on two number values
+// the VM will execute the operation directly, otherwise it will
+// call the associated method with symbol [arg]
+OPCODE(ADD, -1)
+OPCODE(SUB, -1)
+OPCODE(MUL, -1)
+OPCODE(DIV, -1)
+OPCODE(MOD, -1)
+
 // If the top of the stack is false, jump [arg] forward. Otherwise, pop and
 // continue.
 OPCODE(AND, -1)
@@ -169,7 +178,7 @@ OPCODE(FOREIGN_CONSTRUCT, 0)
 // the name of the class. Byte [arg] is the number of fields in the class.
 OPCODE(CLASS, -1)
 
-// Ends a class. 
+// Ends a class.
 // Atm the stack contains the class and the ClassAttributes (or null).
 OPCODE(END_CLASS, -2)
 

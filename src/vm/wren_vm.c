@@ -846,6 +846,25 @@ static WrenInterpretResult PERFORMANCE_CRITICAL_FUNC(runInterpreter)(WrenVM* vm,
   #define READ_BYTE()  (*ip++)
   #define READ_SHORT() (ip += 2, (uint16_t)((ip[-2] << 8) | ip[-1]))
 
+  // Used for arithmetic infix operations. If the arguments are both numbers,
+  // the operation is performed directly. Otherwise the operation is performed
+  // by calling the appropriate method
+  #define ARITHMETIC_INFIX(operation)                                         \
+      do                                                                      \
+      {                                                                       \
+        args = fiber->stackTop - 2;                                           \
+        if ( IS_NUM(args[0]) && IS_NUM(args[1]) ) {                           \
+          args[0] = NUM_VAL(operation);              \
+          fiber->stackTop--;                                                  \
+          ip += 2;  /* advance past the symbol parameter */                   \
+        } else {                                                              \
+          numArgs = 2; /* always 2, first is the implicit reciever */         \
+          symbol = READ_SHORT();                                              \
+          classObj = wrenGetClassInline(vm, args[0]); /* find the receiver */ \
+          goto completeCall;  /* Handle like CALL_1 */                        \
+        }                                                                     \
+      } while(false)
+
   // Use this before a CallFrame is pushed to store the local variables back
   // into the current one.
   #define STORE_FRAME() frame->ip = ip
@@ -963,14 +982,16 @@ static WrenInterpretResult PERFORMANCE_CRITICAL_FUNC(runInterpreter)(WrenVM* vm,
       DISPATCH();
 
     {
-      // The opcodes for doing method and superclass calls share a lot of code.
+      // The opcodes for doing method, superclass calls, and arithmetic operations
+      // share a lot of code.
       // However, doing an if() test in the middle of the instruction sequence
       // to handle the bit that is special to super calls makes the non-super
       // call path noticeably slower.
       //
       // Instead, we do this old school using an explicit goto to share code for
       // everything at the tail end of the call-handling code that is the same
-      // between normal and superclass calls.
+      // between normal and superclass calls, as well as arithmetic ops on
+      // non-numeric objects
       int numArgs;
       int symbol;
 
@@ -978,6 +999,30 @@ static WrenInterpretResult PERFORMANCE_CRITICAL_FUNC(runInterpreter)(WrenVM* vm,
       ObjClass* classObj;
 
       Method* method;
+
+    CASE_CODE(ADD):
+      ARITHMETIC_INFIX(AS_NUM(args[0]) + AS_NUM(args[1]));
+      DISPATCH();
+
+    CASE_CODE(SUB):
+      ARITHMETIC_INFIX(AS_NUM(args[0]) - AS_NUM(args[1]));
+      DISPATCH();
+
+    CASE_CODE(MUL):
+      ARITHMETIC_INFIX(AS_NUM(args[0]) * AS_NUM(args[1]));
+      DISPATCH();
+
+    CASE_CODE(DIV):
+      ARITHMETIC_INFIX(AS_NUM(args[0]) / AS_NUM(args[1]));
+      DISPATCH();
+
+    CASE_CODE(MOD):
+      #ifdef WREN_FLOAT32
+        ARITHMETIC_INFIX(fmodf(AS_NUM(args[0]),AS_NUM(args[1])));
+      #else
+        ARITHMETIC_INFIX(fmod(AS_NUM(args[0]),AS_NUM(args[1])));
+      #endif
+      DISPATCH();
 
     CASE_CODE(CALL_0):
     CASE_CODE(CALL_1):

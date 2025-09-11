@@ -6,7 +6,7 @@ void wrenDebugPrintStackTrace(WrenVM* vm)
 {
   // Bail if the host doesn't enable printing errors.
   if (vm->config.errorFn == NULL) return;
-  
+
   ObjFiber* fiber = vm->fiber;
   if (IS_STRING(fiber->error))
   {
@@ -28,12 +28,12 @@ void wrenDebugPrintStackTrace(WrenVM* vm)
 
     // Skip over stub functions for calling methods from the C API.
     if (fn->module == NULL) continue;
-    
+
     // The built-in core module has no name. We explicitly omit it from stack
     // traces since we don't want to highlight to a user the implementation
     // detail of what part of the core module is written in C and what is Wren.
     if (fn->module->name == NULL) continue;
-    
+
     // -1 because IP has advanced past the instruction that it just executed.
     int line = fn->debug->sourceLines.data[frame->ip - fn->code.data - 1];
     vm->config.errorFn(vm, WREN_ERROR_STACK_TRACE,
@@ -99,6 +99,12 @@ void wrenDumpValue(Value value)
 #endif
 }
 
+static const char* const opcodeName[] = {
+  #define OPCODE(name, _) #name,
+  #include "wren_opcodes.h"
+  #undef OPCODE
+};
+
 static int dumpInstruction(WrenVM* vm, ObjFn* fn, int i, int* lastLine)
 {
   int start = i;
@@ -121,62 +127,63 @@ static int dumpInstruction(WrenVM* vm, ObjFn* fn, int i, int* lastLine)
   #define READ_BYTE() (bytecode[i++])
   #define READ_SHORT() (i += 2, (bytecode[i - 2] << 8) | bytecode[i - 1])
 
-  #define BYTE_INSTRUCTION(name)                                               \
-      printf("%-16s %5d\n", name, READ_BYTE());                                \
-      break
+  #define BARE_INSTRUCTION()  do { printf("%s\n", opcodeName[code]); } while(0)
+
+  #define BYTE_INSTRUCTION()  do { printf("%-16s %5d\n", opcodeName[code], READ_BYTE()); } while(0)
 
   switch (code)
   {
     case CODE_CONSTANT:
     {
       int constant = READ_SHORT();
-      printf("%-16s %5d '", "CONSTANT", constant);
+      printf("%-16s %5d '", opcodeName[code], constant);
       wrenDumpValue(fn->constants.data[constant]);
       printf("'\n");
       break;
     }
 
-    case CODE_NULL:  printf("NULL\n"); break;
-    case CODE_FALSE: printf("FALSE\n"); break;
-    case CODE_TRUE:  printf("TRUE\n"); break;
+    case CODE_NULL:
+    case CODE_FALSE:
+    case CODE_TRUE:
+      BARE_INSTRUCTION();
+      break;
 
-    case CODE_LOAD_LOCAL_0: printf("LOAD_LOCAL_0\n"); break;
-    case CODE_LOAD_LOCAL_1: printf("LOAD_LOCAL_1\n"); break;
-    case CODE_LOAD_LOCAL_2: printf("LOAD_LOCAL_2\n"); break;
-    case CODE_LOAD_LOCAL_3: printf("LOAD_LOCAL_3\n"); break;
-    case CODE_LOAD_LOCAL_4: printf("LOAD_LOCAL_4\n"); break;
-    case CODE_LOAD_LOCAL_5: printf("LOAD_LOCAL_5\n"); break;
-    case CODE_LOAD_LOCAL_6: printf("LOAD_LOCAL_6\n"); break;
-    case CODE_LOAD_LOCAL_7: printf("LOAD_LOCAL_7\n"); break;
-    case CODE_LOAD_LOCAL_8: printf("LOAD_LOCAL_8\n"); break;
+    case CODE_LOAD_LOCAL_0:
+    case CODE_LOAD_LOCAL_1:
+    case CODE_LOAD_LOCAL_2:
+    case CODE_LOAD_LOCAL_3:
+    case CODE_LOAD_LOCAL_4:
+    case CODE_LOAD_LOCAL_5:
+    case CODE_LOAD_LOCAL_6:
+    case CODE_LOAD_LOCAL_7:
+    case CODE_LOAD_LOCAL_8:
+      BARE_INSTRUCTION();
+      break;
 
-    case CODE_LOAD_LOCAL: BYTE_INSTRUCTION("LOAD_LOCAL");
-    case CODE_STORE_LOCAL: BYTE_INSTRUCTION("STORE_LOCAL");
-    case CODE_LOAD_UPVALUE: BYTE_INSTRUCTION("LOAD_UPVALUE");
-    case CODE_STORE_UPVALUE: BYTE_INSTRUCTION("STORE_UPVALUE");
+    case CODE_LOAD_LOCAL:
+    case CODE_STORE_LOCAL:
+    case CODE_LOAD_UPVALUE:
+    case CODE_STORE_UPVALUE:
+      BYTE_INSTRUCTION();
+      break;
 
     case CODE_LOAD_MODULE_VAR:
-    {
-      int slot = READ_SHORT();
-      printf("%-16s %5d '%s'\n", "LOAD_MODULE_VAR", slot,
-             fn->module->variableNames.data[slot]->value);
-      break;
-    }
-
     case CODE_STORE_MODULE_VAR:
     {
       int slot = READ_SHORT();
-      printf("%-16s %5d '%s'\n", "STORE_MODULE_VAR", slot,
+      printf("%-16s %5d '%s'\n", opcodeName[code], slot,
              fn->module->variableNames.data[slot]->value);
       break;
     }
 
-    case CODE_LOAD_FIELD_THIS: BYTE_INSTRUCTION("LOAD_FIELD_THIS");
-    case CODE_STORE_FIELD_THIS: BYTE_INSTRUCTION("STORE_FIELD_THIS");
-    case CODE_LOAD_FIELD: BYTE_INSTRUCTION("LOAD_FIELD");
-    case CODE_STORE_FIELD: BYTE_INSTRUCTION("STORE_FIELD");
+    case CODE_LOAD_FIELD_THIS:
+    case CODE_STORE_FIELD_THIS:
+    case CODE_LOAD_FIELD:
+    case CODE_STORE_FIELD:
+      BYTE_INSTRUCTION();
+      break;
 
-    case CODE_POP: printf("POP\n"); break;
+    case CODE_POP: BARE_INSTRUCTION(); break;
 
     case CODE_CALL_0:
     case CODE_CALL_1:
@@ -196,9 +203,8 @@ static int dumpInstruction(WrenVM* vm, ObjFn* fn, int i, int* lastLine)
     case CODE_CALL_15:
     case CODE_CALL_16:
     {
-      int numArgs = bytecode[i - 1] - CODE_CALL_0;
       int symbol = READ_SHORT();
-      printf("CALL_%-11d %5d '%s'\n", numArgs, symbol,
+      printf("%-16s %5d '%s'\n", opcodeName[code], symbol,
              vm->methodNames.data[symbol]->value);
       break;
     }
@@ -221,56 +227,52 @@ static int dumpInstruction(WrenVM* vm, ObjFn* fn, int i, int* lastLine)
     case CODE_SUPER_15:
     case CODE_SUPER_16:
     {
-      int numArgs = bytecode[i - 1] - CODE_SUPER_0;
       int symbol = READ_SHORT();
       int superclass = READ_SHORT();
-      printf("SUPER_%-10d %5d '%s' %5d\n", numArgs, symbol,
+      printf("%-16s %5d '%s' %5d\n", opcodeName[code], symbol,
              vm->methodNames.data[symbol]->value, superclass);
       break;
     }
 
-    case CODE_JUMP:
-    {
-      int offset = READ_SHORT();
-      printf("%-16s %5d to %d\n", "JUMP", offset, i + offset);
-      break;
-    }
 
     case CODE_LOOP:
     {
       int offset = READ_SHORT();
-      printf("%-16s %5d to %d\n", "LOOP", offset, i - offset);
+      printf("%-16s %5d to %d\n", opcodeName[code], offset, i - offset);
       break;
     }
 
+    case CODE_JUMP:
     case CODE_JUMP_IF:
-    {
-      int offset = READ_SHORT();
-      printf("%-16s %5d to %d\n", "JUMP_IF", offset, i + offset);
-      break;
-    }
-
     case CODE_AND:
-    {
-      int offset = READ_SHORT();
-      printf("%-16s %5d to %d\n", "AND", offset, i + offset);
-      break;
-    }
-
     case CODE_OR:
     {
       int offset = READ_SHORT();
-      printf("%-16s %5d to %d\n", "OR", offset, i + offset);
+      printf("%-16s %5d to %d\n", opcodeName[code], offset, i + offset);
       break;
     }
 
-    case CODE_CLOSE_UPVALUE: printf("CLOSE_UPVALUE\n"); break;
-    case CODE_RETURN:        printf("RETURN\n"); break;
+    case CODE_ADD:
+    case CODE_SUB:
+    case CODE_MUL:
+    case CODE_DIV:
+    case CODE_MOD:
+    {
+      int symbol = READ_SHORT();
+      printf("%-16s %5d '%s'\n", opcodeName[code], symbol,
+             vm->methodNames.data[symbol]->value);
+      break;
+    }
+
+    case CODE_CLOSE_UPVALUE:
+    case CODE_RETURN:
+      BARE_INSTRUCTION();
+      break;
 
     case CODE_CLOSURE:
     {
       int constant = READ_SHORT();
-      printf("%-16s %5d ", "CLOSURE", constant);
+      printf("%-16s %5d ", opcodeName[code], constant);
       wrenDumpValue(fn->constants.data[constant]);
       printf(" ");
       ObjFn* loadedFn = AS_FN(fn->constants.data[constant]);
@@ -285,57 +287,46 @@ static int dumpInstruction(WrenVM* vm, ObjFn* fn, int i, int* lastLine)
       break;
     }
 
-    case CODE_CONSTRUCT:         printf("CONSTRUCT\n"); break;
-    case CODE_FOREIGN_CONSTRUCT: printf("FOREIGN_CONSTRUCT\n"); break;
-      
+    case CODE_CONSTRUCT:
+    case CODE_FOREIGN_CONSTRUCT:
+      BARE_INSTRUCTION();
+      break;
+
     case CODE_CLASS:
     {
       int numFields = READ_BYTE();
-      printf("%-16s %5d fields\n", "CLASS", numFields);
+      printf("%-16s %5d fields\n", opcodeName[code], numFields);
       break;
     }
 
-    case CODE_FOREIGN_CLASS: printf("FOREIGN_CLASS\n"); break;
-    case CODE_END_CLASS: printf("END_CLASS\n"); break;
+    case CODE_FOREIGN_CLASS:
+    case CODE_END_CLASS:
+      BARE_INSTRUCTION();
+      break;
 
     case CODE_METHOD_INSTANCE:
-    {
-      int symbol = READ_SHORT();
-      printf("%-16s %5d '%s'\n", "METHOD_INSTANCE", symbol,
-             vm->methodNames.data[symbol]->value);
-      break;
-    }
-
     case CODE_METHOD_STATIC:
     {
       int symbol = READ_SHORT();
-      printf("%-16s %5d '%s'\n", "METHOD_STATIC", symbol,
+      printf("%-16s %5d '%s'\n", opcodeName[code], symbol,
              vm->methodNames.data[symbol]->value);
       break;
     }
-      
+
     case CODE_END_MODULE:
-      printf("END_MODULE\n");
+      BARE_INSTRUCTION();
       break;
-      
+
     case CODE_IMPORT_MODULE:
+    case CODE_IMPORT_VARIABLE:
     {
       int name = READ_SHORT();
-      printf("%-16s %5d '", "IMPORT_MODULE", name);
+      printf("%-16s %5d '", opcodeName[code], name);
       wrenDumpValue(fn->constants.data[name]);
       printf("'\n");
       break;
     }
-      
-    case CODE_IMPORT_VARIABLE:
-    {
-      int variable = READ_SHORT();
-      printf("%-16s %5d '", "IMPORT_VARIABLE", variable);
-      wrenDumpValue(fn->constants.data[variable]);
-      printf("'\n");
-      break;
-    }
-      
+
     case CODE_END:
       printf("END\n");
       break;
