@@ -69,7 +69,11 @@ void wrenDumpValue(Value value)
 #if WREN_NAN_TAGGING
   if (IS_NUM(value))
   {
-    printf("%.14g", AS_NUM(value));
+    #ifdef WREN_FLOAT32
+      printf("%.8g", AS_NUM(value));
+    #else
+      printf("%.14g", AS_NUM(value));
+    #endif
   }
   else if (IS_OBJ(value))
   {
@@ -91,10 +95,15 @@ void wrenDumpValue(Value value)
   {
     case VAL_FALSE:     printf("false"); break;
     case VAL_NULL:      printf("null"); break;
-    case VAL_NUM:       printf("%.14g", AS_NUM(value)); break;
     case VAL_TRUE:      printf("true"); break;
     case VAL_OBJ:       dumpObject(AS_OBJ(value)); break;
     case VAL_UNDEFINED: UNREACHABLE();
+    case VAL_NUM:
+    #ifdef WREN_FLOAT32
+      printf("%.8g", AS_NUM(value)); break;
+    #else
+      printf("%.14g", AS_NUM(value)); break;
+    #endif
   }
 #endif
 }
