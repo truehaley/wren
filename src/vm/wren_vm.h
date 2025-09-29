@@ -12,7 +12,7 @@
 
 typedef enum
 {
-  #define OPCODE(name, _) CODE_##name,
+  #define OPCODE(name, size, effect) CODE_##name,
   #include "wren_opcodes.h"
 } Code;
 

@@ -109,7 +109,7 @@ void wrenDumpValue(Value value)
 }
 
 static const char* const opcodeName[] = {
-  #define OPCODE(name, _) #name,
+  #define OPCODE(name, size, effect) #name,
   #include "wren_opcodes.h"
 };
 

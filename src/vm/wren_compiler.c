@@ -412,7 +412,7 @@ static void copyMethodAttributes(Compiler* compiler, bool isForeign,
 // The stack effect of each opcode. The index in the array is the opcode, and
 // the value is the stack effect of that instruction.
 static const int stackEffects[] = {
-  #define OPCODE(_, effect) effect,
+  #define OPCODE(name, size, effect) effect,
   #include "wren_opcodes.h"
 };
 
@@ -2885,110 +2885,32 @@ void expression(Compiler* compiler)
 static int getByteCountForArguments(const uint8_t* bytecode,
                             const Value* constants, int ip)
 {
-  Code instruction = (Code)bytecode[ip];
-  switch (instruction)
-  {
-    case CODE_NULL:
-    case CODE_FALSE:
-    case CODE_TRUE:
-    case CODE_POP:
-    case CODE_CLOSE_UPVALUE:
-    case CODE_RETURN:
-    case CODE_END:
-    case CODE_LOAD_LOCAL_0:
-    case CODE_LOAD_LOCAL_1:
-    case CODE_LOAD_LOCAL_2:
-    case CODE_LOAD_LOCAL_3:
-    case CODE_LOAD_LOCAL_4:
-    case CODE_LOAD_LOCAL_5:
-    case CODE_LOAD_LOCAL_6:
-    case CODE_LOAD_LOCAL_7:
-    case CODE_LOAD_LOCAL_8:
-    case CODE_CONSTRUCT:
-    case CODE_FOREIGN_CONSTRUCT:
-    case CODE_FOREIGN_CLASS:
-    case CODE_END_MODULE:
-    case CODE_END_CLASS:
-      return 0;
+  static const int8_t opcodeSize[] = {
+    #define OPCODE(name, size, effect) size,
+    #include "wren_opcodes.h"
+  };
 
-    case CODE_LOAD_LOCAL:
-    case CODE_STORE_LOCAL:
-    case CODE_LOAD_UPVALUE:
-    case CODE_STORE_UPVALUE:
-    case CODE_LOAD_FIELD_THIS:
-    case CODE_STORE_FIELD_THIS:
-    case CODE_LOAD_FIELD:
-    case CODE_STORE_FIELD:
-    case CODE_CLASS:
-      return 1;
+  const Code instruction = (Code)bytecode[ip];
 
-    case CODE_CONSTANT:
-    case CODE_ICONSTANT:
-    case CODE_LOAD_MODULE_VAR:
-    case CODE_STORE_MODULE_VAR:
-    case CODE_CALL_0:
-    case CODE_CALL_1:
-    case CODE_CALL_2:
-    case CODE_CALL_3:
-    case CODE_CALL_4:
-    case CODE_CALL_5:
-    case CODE_CALL_6:
-    case CODE_CALL_7:
-    case CODE_CALL_8:
-    case CODE_CALL_9:
-    case CODE_CALL_10:
-    case CODE_CALL_11:
-    case CODE_CALL_12:
-    case CODE_CALL_13:
-    case CODE_CALL_14:
-    case CODE_CALL_15:
-    case CODE_CALL_16:
-    case CODE_JUMP:
-    case CODE_LOOP:
-    case CODE_JUMP_IF:
-    case CODE_ADD:
-    case CODE_SUB:
-    case CODE_MUL:
-    case CODE_DIV:
-    case CODE_MOD:
-    case CODE_AND:
-    case CODE_OR:
-    case CODE_METHOD_INSTANCE:
-    case CODE_METHOD_STATIC:
-    case CODE_IMPORT_MODULE:
-    case CODE_IMPORT_VARIABLE:
-      return 2;
-
-    case CODE_SUPER_0:
-    case CODE_SUPER_1:
-    case CODE_SUPER_2:
-    case CODE_SUPER_3:
-    case CODE_SUPER_4:
-    case CODE_SUPER_5:
-    case CODE_SUPER_6:
-    case CODE_SUPER_7:
-    case CODE_SUPER_8:
-    case CODE_SUPER_9:
-    case CODE_SUPER_10:
-    case CODE_SUPER_11:
-    case CODE_SUPER_12:
-    case CODE_SUPER_13:
-    case CODE_SUPER_14:
-    case CODE_SUPER_15:
-    case CODE_SUPER_16:
-      return 4;
-
-    case CODE_CLOSURE:
-    {
-      int constant = (bytecode[ip + 1] << 8) | bytecode[ip + 2];
-      ObjFn* loadedFn = AS_FN(constants[constant]);
-
-      // There are two bytes for the constant, then two for each upvalue.
-      return 2 + (loadedFn->numUpvalues * 2);
+  if(instruction <= CODE_END) {
+    if(opcodeSize[instruction] != -1) {
+      return opcodeSize[instruction]-1; // -1 since we only want the argument size
     }
-  }
+    switch(instruction) {
+      case CODE_CLOSURE:
+      {
+        int constant = (bytecode[ip + 1] << 8) | bytecode[ip + 2];
+        ObjFn* loadedFn = AS_FN(constants[constant]);
 
-  UNREACHABLE();
+        // There are two bytes for the constant, then two for each upvalue.
+        return 2 + (loadedFn->numUpvalues * 2);
+      }
+      default:
+        UNREACHABLE();
+    }
+  } else {
+    UNREACHABLE();
+  }
   return 0;
 }
 

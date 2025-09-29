@@ -909,7 +909,7 @@ static WrenInterpretResult PERFORMANCE_CRITICAL_FUNC(runInterpreter)(WrenVM* vm,
   #if WREN_COMPUTED_GOTO
 
   static void* PERFORMANCE_CRITICAL_VAR(dispatchTable)[] = {
-    #define OPCODE(name, _) &&code_##name,
+    #define OPCODE(name, size, effect) &&code_##name,
     #include "wren_opcodes.h"
   };
 
