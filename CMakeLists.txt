@@ -36,6 +36,7 @@ target_sources(wrenlib PRIVATE
     src/vm/wren_compiler.c
     src/vm/wren_core.c
     src/vm/wren_debug.c
+    src/vm/wren_lexer.c
     src/vm/wren_primitive.c
     src/vm/wren_utils.c
     src/vm/wren_value.c
